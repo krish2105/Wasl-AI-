@@ -1,0 +1,249 @@
+# =============================================================================
+# WASL AI — SEED URL REGISTRY
+# Path in repo: seeds/seed_urls.yaml
+# =============================================================================
+#
+# PURPOSE
+#   1. Crawl allowlist. The crawler MUST refuse any domain not listed here or
+#      explicitly submitted by a user at runtime.
+#   2. Leaderboard population (Phase 8).
+#   3. Bootstrap for the 30-site golden eval set (entries flagged `golden: true`).
+#
+# BEFORE FIRST USE — RUN THE VERIFIER
+#   These domains were compiled from general knowledge and are NOT guaranteed
+#   live. Companies rebrand, merge, and move domains. Phase 2 must ship
+#   `scripts/verify_seeds.py` which:
+#     - sends a HEAD request to each url (2s timeout, follow redirects)
+#     - records final_url after redirects
+#     - marks status: ok | redirected | dead | blocked
+#     - writes seeds/seed_urls.verified.yaml
+#   Only the verified file feeds the leaderboard. Dead entries are dropped,
+#   redirected entries have their url updated in place.
+#
+# ETHICS
+#   Read-only. GET only. robots.txt is authoritative. 0.5 req/s per domain,
+#   40 page cap. A robots.txt disallow is recorded as evidence, never bypassed.
+#   Publish an opt-out contact on the crawler info page and honour it within 24h.
+# =============================================================================
+
+version: 1
+updated: 2026-07-25
+
+crawl_policy:
+  max_pages_per_domain: 40
+  requests_per_second: 0.5
+  request_timeout_seconds: 20
+  respect_robots: true
+  follow_redirects: true
+  max_redirect_depth: 3
+  render_javascript: true          # capture pre-JS and post-JS DOM separately
+  user_agent: "WaslAI-Research/1.0 (+https://wasl.ai/crawler)"
+  opt_out_contact: "crawler@wasl.ai"
+  allowed_schemes: [https]
+  # Never fetch these regardless of robots.txt
+  hard_exclude_paths:
+    - /checkout
+    - /cart
+    - /login
+    - /signin
+    - /register
+    - /account
+    - /payment
+    - /admin
+  # Skip binaries — we score markup, not media
+  skip_extensions: [.pdf, .zip, .mp4, .mp3, .dmg, .exe, .apk]
+
+# -----------------------------------------------------------------------------
+# GOLDEN SET COMPOSITION (entries flagged `golden: true` below)
+#   6 e-commerce · 5 hospitality/travel · 5 real estate · 4 government/public
+#   4 SaaS/API-first · 3 automotive · 3 logistics  = 30 sites
+# Labels for these go in seeds/golden/labels.yaml and are filled BY HAND.
+# Claude must never invent golden labels.
+# -----------------------------------------------------------------------------
+
+groups:
+
+  # ===========================================================================
+  uae_retail_ecommerce:
+    label: "UAE — Retail & E-commerce"
+    hypothesis: "Strong product schema, weak capability exposure. Expect Readable."
+    sites:
+      - { name: "Noon",              url: "https://www.noon.com",              golden: true }
+      - { name: "Amazon.ae",         url: "https://www.amazon.ae",             golden: true }
+      - { name: "Namshi",            url: "https://www.namshi.com",            golden: true }
+      - { name: "Ounass",            url: "https://www.ounass.ae",             golden: true }
+      - { name: "Sharaf DG",         url: "https://uae.sharafdg.com",          golden: true }
+      - { name: "Lulu Hypermarket",  url: "https://www.luluhypermarket.com",   golden: true }
+      - { name: "Carrefour UAE",     url: "https://www.carrefouruae.com" }
+      - { name: "Centrepoint",       url: "https://www.centrepointstores.com" }
+      - { name: "Mumzworld",         url: "https://www.mumzworld.com" }
+      - { name: "Jumbo Electronics", url: "https://www.jumbo.ae" }
+      - { name: "Talabat",           url: "https://www.talabat.com" }
+      - { name: "Careem",            url: "https://www.careem.com" }
+
+  # ===========================================================================
+  uae_realestate:
+    label: "UAE — Real Estate"
+    hypothesis: "Listing portals score high on identifiers, developers score low. Wide spread expected."
+    sites:
+      - { name: "Bayut",                 url: "https://www.bayut.com",           golden: true }
+      - { name: "Property Finder",       url: "https://www.propertyfinder.ae",   golden: true }
+      - { name: "Emaar Properties",      url: "https://www.emaar.com",           golden: true }
+      - { name: "DAMAC Properties",      url: "https://www.damacproperties.com", golden: true }
+      - { name: "Betterhomes",           url: "https://www.bhomes.com",          golden: true }
+      - { name: "Dubizzle",              url: "https://www.dubizzle.com" }
+      - { name: "Nakheel",               url: "https://www.nakheel.com" }
+      - { name: "Aldar Properties",      url: "https://www.aldar.com" }
+      - { name: "Sobha Realty",          url: "https://www.sobharealty.com" }
+      - { name: "Allsopp & Allsopp",     url: "https://www.allsoppandallsopp.com" }
+      - { name: "Huspy",                 url: "https://www.huspy.com" }
+      - { name: "Provident Estate",      url: "https://www.providentestate.com" }
+
+  # ===========================================================================
+  uae_travel_hospitality:
+    label: "UAE — Travel & Hospitality"
+    hypothesis: "Airlines have real APIs but hide them; hotels are booking-engine dependent."
+    sites:
+      - { name: "Emirates",              url: "https://www.emirates.com",   golden: true }
+      - { name: "flydubai",              url: "https://www.flydubai.com",   golden: true }
+      - { name: "Jumeirah",              url: "https://www.jumeirah.com",   golden: true }
+      - { name: "Atlantis The Palm",     url: "https://www.atlantis.com",   golden: true }
+      - { name: "Visit Dubai (DET)",     url: "https://www.visitdubai.com", golden: true }
+      - { name: "Etihad Airways",        url: "https://www.etihad.com" }
+      - { name: "Air Arabia",            url: "https://www.airarabia.com" }
+      - { name: "Rotana Hotels",         url: "https://www.rotana.com" }
+      - { name: "Address Hotels",        url: "https://www.addresshotels.com" }
+      - { name: "Dubai Parks & Resorts", url: "https://www.dubaiparksandresorts.com" }
+      - { name: "Expo City Dubai",       url: "https://www.expocitydubai.com" }
+      - { name: "Dubai Airports",        url: "https://www.dubaiairports.ae" }
+
+  # ===========================================================================
+  uae_automotive:
+    label: "UAE — Automotive"
+    hypothesis: "Classifieds carry stable listing IDs; dealer sites are brochureware. Sharpest contrast in the set."
+    sites:
+      - { name: "DubiCars",              url: "https://www.dubicars.com",            golden: true }
+      - { name: "YallaMotor",            url: "https://uae.yallamotor.com",          golden: true }
+      - { name: "Arabian Automobiles",   url: "https://www.arabianautomobiles.com",  golden: true }
+      - { name: "CarSwitch",             url: "https://carswitch.com" }
+      - { name: "Cars24 UAE",            url: "https://www.cars24.ae" }
+      - { name: "Al-Futtaim",            url: "https://www.alfuttaim.com" }
+      - { name: "AW Rostamani",          url: "https://www.awrostamani.com" }
+      - { name: "Al Nabooda Automobiles",url: "https://www.alnaboodaautomobiles.com" }
+      - { name: "Al Tayer Motors",       url: "https://www.altayermotors.com" }
+      - { name: "ENOC",                  url: "https://www.enoc.com" }
+
+  # ===========================================================================
+  uae_logistics_trade:
+    label: "UAE — Logistics, Trade & Free Zones"
+    hypothesis: "Tracking capability exists but is JS-gated. Expect low Capability Exposure despite real APIs."
+    sites:
+      - { name: "DP World",              url: "https://www.dpworld.com",     golden: true }
+      - { name: "Aramex",                url: "https://www.aramex.com",      golden: true }
+      - { name: "Emirates Post",         url: "https://www.emiratespost.ae", golden: true }
+      - { name: "Dubai Trade",           url: "https://www.dubaitrade.ae" }
+      - { name: "JAFZA",                 url: "https://www.jafza.ae" }
+      - { name: "DMCC",                  url: "https://www.dmcc.ae" }
+      - { name: "Emirates SkyCargo",     url: "https://www.skycargo.com" }
+      - { name: "Shipa Delivery",        url: "https://www.shipadelivery.com" }
+      - { name: "Gulftainer",            url: "https://www.gulftainer.com" }
+      - { name: "RSA Global",            url: "https://www.rsagcc.com" }
+
+  # ===========================================================================
+  uae_government_public:
+    label: "UAE — Government & Public Sector"
+    hypothesis: >
+      The most strategically important group. Under the federal directive to move
+      50% of services to autonomous agents by 2028, these scores are the story.
+      Expect strong content, near-zero capability exposure.
+    sites:
+      - { name: "UAE Government Portal",     url: "https://u.ae",              golden: true }
+      - { name: "MOHRE",                     url: "https://www.mohre.gov.ae",  golden: true }
+      - { name: "Federal Tax Authority",     url: "https://tax.gov.ae",        golden: true }
+      - { name: "Dubai Land Department",     url: "https://dubailand.gov.ae",  golden: true }
+      - { name: "Digital Dubai",             url: "https://www.digitaldubai.ae" }
+      - { name: "Dubai Pulse (open data)",   url: "https://www.dubaipulse.gov.ae" }
+      - { name: "RTA Dubai",                 url: "https://www.rta.ae" }
+      - { name: "DEWA",                      url: "https://www.dewa.gov.ae" }
+      - { name: "Dubai Health Authority",    url: "https://www.dha.gov.ae" }
+      - { name: "MOCCAE",                    url: "https://www.moccae.gov.ae" }
+      - { name: "Ministry of Finance",       url: "https://mof.gov.ae" }
+      - { name: "ICP",                       url: "https://icp.gov.ae" }
+      - { name: "GDRFA Dubai",               url: "https://www.gdrfad.gov.ae" }
+      - { name: "KHDA",                      url: "https://www.khda.gov.ae" }
+
+  # ===========================================================================
+  uae_financial_services:
+    label: "UAE — Banking & Financial Services"
+    hypothesis: "Heavy auth walls. Tests whether the rubric fairly handles legitimately gated capability."
+    sites:
+      - { name: "Emirates NBD",  url: "https://www.emiratesnbd.com" }
+      - { name: "First Abu Dhabi Bank", url: "https://www.bankfab.com" }
+      - { name: "ADCB",          url: "https://www.adcb.com" }
+      - { name: "Mashreq",       url: "https://www.mashreq.com" }
+      - { name: "Dubai Islamic Bank", url: "https://www.dib.ae" }
+      - { name: "RAKBANK",       url: "https://www.rakbank.ae" }
+      - { name: "DIFC",          url: "https://www.difc.ae" }
+      - { name: "ADGM",          url: "https://www.adgm.com" }
+      - { name: "Tabby",         url: "https://tabby.ai" }
+
+  # ===========================================================================
+  uae_technology:
+    label: "UAE — Technology & AI"
+    hypothesis: "Should score highest locally. If they don't, that is itself the headline."
+    sites:
+      - { name: "G42",       url: "https://www.g42.ai" }
+      - { name: "Presight",  url: "https://www.presight.ai" }
+      - { name: "Core42",    url: "https://core42.ai" }
+      - { name: "e& (etisalat)", url: "https://www.eand.com" }
+      - { name: "du",        url: "https://www.du.ae" }
+      - { name: "Bayanat",   url: "https://bayanat.ai" }
+
+  # ===========================================================================
+  global_api_first_reference:
+    label: "Global — API-First Reference Set"
+    hypothesis: >
+      Control group. These should score 75-95 and anchor the top of the
+      leaderboard. If a UAE site outscores Stripe, the rubric is broken —
+      use this group as a continuous sanity check on scoring drift.
+    sites:
+      - { name: "Stripe",     url: "https://stripe.com",     golden: true }
+      - { name: "Twilio",     url: "https://www.twilio.com", golden: true }
+      - { name: "GitHub",     url: "https://github.com",     golden: true }
+      - { name: "Shopify",    url: "https://www.shopify.com",golden: true }
+      - { name: "Cloudflare", url: "https://www.cloudflare.com" }
+      - { name: "Vercel",     url: "https://vercel.com" }
+      - { name: "Anthropic",  url: "https://www.anthropic.com" }
+      - { name: "Notion",     url: "https://www.notion.com" }
+      - { name: "HubSpot",    url: "https://www.hubspot.com" }
+      - { name: "Slack",      url: "https://slack.com" }
+
+  # ===========================================================================
+  global_consumer_reference:
+    label: "Global — Consumer Reference Set"
+    hypothesis: "Mature structured data, mixed capability exposure. Mid-table anchors."
+    sites:
+      - { name: "Booking.com", url: "https://www.booking.com" }
+      - { name: "Airbnb",      url: "https://www.airbnb.com" }
+      - { name: "eBay",        url: "https://www.ebay.com" }
+      - { name: "Best Buy",    url: "https://www.bestbuy.com" }
+      - { name: "IKEA",        url: "https://www.ikea.com" }
+      - { name: "Zara",        url: "https://www.zara.com" }
+
+# =============================================================================
+# COUNTS (assert these in scripts/verify_seeds.py — fail loudly on drift)
+# =============================================================================
+expected_counts:
+  total_sites: 99
+  golden_sites: 30
+  groups: 10
+
+# =============================================================================
+# EXCLUSION REGISTRY
+# Append any domain that asks to be removed, blocks the crawler, or that you
+# decide is inappropriate to score publicly. The crawler MUST check this list
+# before the allowlist, and this list always wins.
+# =============================================================================
+excluded:
+  domains: []
+  reasons: {}
