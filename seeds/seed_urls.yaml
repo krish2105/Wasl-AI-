@@ -30,15 +30,24 @@ version: 1
 updated: 2026-07-25
 
 crawl_policy:
-  max_pages_per_domain: 40
+  # Two budgets. 40 pages at 0.5 req/s is an 80s throttle floor, which cannot fit
+  # inside the 90s p95 target for a user-facing scan. Interactive scans therefore
+  # use a 12-page budget (24s floor, still above the 8-page confidence floor);
+  # 40 pages is the batch/leaderboard budget and the absolute hard cap.
+  max_pages_per_domain: 40         # BATCH — hard cap, never exceeded
+  max_pages_interactive: 12        # INTERACTIVE — user-submitted scans
   requests_per_second: 0.5
   request_timeout_seconds: 20
   respect_robots: true
   follow_redirects: true
   max_redirect_depth: 3
   render_javascript: true          # capture pre-JS and post-JS DOM separately
-  user_agent: "WaslAI-Research/1.0 (+https://wasl.ai/crawler)"
-  opt_out_contact: "crawler@wasl.ai"
+  # These two are overridden at runtime by WASL_CRAWLER_INFO_URL and
+  # WASL_OPT_OUT_EMAIL. The values below are placeholders and are NOT yet live —
+  # the crawler refuses to start until both env vars point at a real page and a
+  # real mailbox. Advertising a dead info URL is dishonest identification.
+  user_agent: "WaslAI-Research/1.0 (+https://wasl-ai.vercel.app/crawler)"
+  opt_out_contact: "crawler@wasl-ai.vercel.app"
   allowed_schemes: [https]
   # Never fetch these regardless of robots.txt
   hard_exclude_paths:
@@ -233,8 +242,10 @@ groups:
 # =============================================================================
 # COUNTS (assert these in scripts/verify_seeds.py — fail loudly on drift)
 # =============================================================================
+# Corrected 2026-07-25: total_sites was declared 99; the actual count across the
+# ten groups is 101. Verified by counting, not by trusting the header.
 expected_counts:
-  total_sites: 99
+  total_sites: 101
   golden_sites: 30
   groups: 10
 

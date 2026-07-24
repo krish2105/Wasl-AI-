@@ -1,6 +1,31 @@
+# Secrets
 .env
+.env.local
+.env.*.local
+
+# Python
 .venv/
-node_modules/
 __pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Node
+node_modules/
+.next/
+.turbo/
+*.tsbuildinfo
+
+# Wasl data — all gitignored. Reference corpora are large, crawl snapshots are
+# third-party page content we do not republish, and artifacts are regenerable.
 data/reference/
+data/cache/
+data/artifacts/
+*.zip
+
+# Eval output — regenerable; the README table is the committed artifact
+services/api/eval/failures/
+
+# OS
 .DS_Store

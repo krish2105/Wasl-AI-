@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark is the primary theme and is designed first, per the Phase 7 brief. The
+   two variables below are placeholders so the shell is legible; the real token
+   set comes out of the direction pass. */
+:root {
+  --background: 10 10 12;
+  --foreground: 245 245 247;
+}
+
+body {
+  background: rgb(var(--background));
+  color: rgb(var(--foreground));
+}
+
+/* Motion is opt-in for everyone who has not asked to opt out. Establishing this
+   in Phase 1 means no later component can forget it. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,155 @@
+# Local infrastructure for Wasl AI.
+#
+# Two tiers, deliberately:
+#
+#   default          postgres (+pgvector) and redis. Always up. These are the
+#                    application's own dependencies — the crawler, the queue and
+#                    the LangGraph checkpointer all need them.
+#
+#   --profile obs    Langfuse v3 and its supporting cast (clickhouse, minio,
+#                    plus a worker). Four extra containers and several GB of RAM,
+#                    which competes with headless Chromium on the same machine.
+#                    Bring it up when you want traces; leave it down when you
+#                    want to crawl.
+#
+#   docker compose up -d                  # app deps only
+#   docker compose --profile obs up -d    # everything, incl. Langfuse on :3001
+#
+# Nothing here is production configuration. Credentials are development
+# defaults; real deployments read from a secret store.
+
+name: wasl
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: wasl-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-wasl}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-wasl_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-wasl}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-wasl} -d ${POSTGRES_DB:-wasl}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    container_name: wasl-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-wasl_dev_password}
+      --maxmemory 512mb
+      --maxmemory-policy noeviction
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-wasl_dev_password}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # --- observability tier (profile: obs) -------------------------------------
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3
+    container_name: wasl-clickhouse
+    profiles: [obs]
+    restart: unless-stopped
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-wasl_dev_password}
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_logs:/var/log/clickhouse-server
+    ulimits:
+      nofile: { soft: 262144, hard: 262144 }
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:RELEASE.2024-11-07T00-52-20Z
+    container_name: wasl-minio
+    profiles: [obs]
+    restart: unless-stopped
+    entrypoint: sh
+    # Langfuse expects the bucket to exist before first write.
+    command: -c 'mkdir -p /data/langfuse && minio server /data --address ":9000" --console-address ":9001"'
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-wasl_dev_password}
+    ports:
+      - "${MINIO_CONSOLE_PORT:-9091}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "mc ready local || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  langfuse-worker:
+    image: langfuse/langfuse-worker:3
+    container_name: wasl-langfuse-worker
+    profiles: [obs]
+    restart: unless-stopped
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      clickhouse: { condition: service_healthy }
+      minio: { condition: service_started }
+    environment: &langfuse_env
+      DATABASE_URL: postgresql://${POSTGRES_USER:-wasl}:${POSTGRES_PASSWORD:-wasl_dev_password}@postgres:5432/langfuse
+      SALT: ${LANGFUSE_SALT:-wasl_dev_salt_change_me}
+      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-wasl_dev_nextauth_secret}
+      NEXTAUTH_URL: ${LANGFUSE_NEXTAUTH_URL:-http://localhost:3001}
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false"
+      CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-clickhouse}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-wasl_dev_password}
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_AUTH: ${REDIS_PASSWORD:-wasl_dev_password}
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minio}
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-wasl_dev_password}
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+
+  langfuse-web:
+    image: langfuse/langfuse:3
+    container_name: wasl-langfuse-web
+    profiles: [obs]
+    restart: unless-stopped
+    depends_on:
+      langfuse-worker: { condition: service_started }
+    environment: *langfuse_env
+    ports:
+      # 3001, not 3000 — Next.js owns 3000.
+      - "${LANGFUSE_PORT:-3001}:3000"
+
+volumes:
+  postgres_data:
+  redis_data:
+  clickhouse_data:
+  clickhouse_logs:
+  minio_data:
