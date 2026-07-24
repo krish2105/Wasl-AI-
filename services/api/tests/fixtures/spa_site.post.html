@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<!--
+  Fixture: hydration-only SPA, post-JS. Substantial content, but it exists only
+  after the bundle runs. Also the infinite-scroll case: there are no crawlable
+  pagination URLs, so an agent cannot enumerate the listing at all.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Marsa Properties — Waterfront Apartments</title>
+  <script defer src="/static/js/main.8f2c91ab.js"></script>
+</head>
+<body>
+  <div id="root">
+    <div class="app-shell">
+      <div class="nav-row">
+        <a href="/">Home</a>
+        <a href="/listings">Listings</a>
+        <a href="/agents">Our Agents</a>
+      </div>
+      <div class="page">
+        <div class="page-title">Waterfront Apartments in Dubai Marina</div>
+        <div class="intro">
+          Marsa Properties lists residential apartments across Dubai Marina, Jumeirah
+          Beach Residence and Bluewaters Island. Every listing is verified by our
+          brokerage before publication and includes the Ejari registration status,
+          service charge history and the current RERA index band for the building.
+          Availability changes daily and is synchronised with our internal system
+          each morning.
+        </div>
+        <div class="results" data-infinite-scroll="true">
+          <div class="card">
+            <div class="card-title">2 Bedroom, Marina Gate Tower 1</div>
+            <div class="card-meta">1,340 sq ft · Vacant on transfer · AED 2,850,000</div>
+            <div class="card-body">
+              High-floor unit with full marina views, two allocated parking bays and
+              access to the tower's shared pool and gymnasium. Service charge is
+              currently AED 18.40 per square foot annually.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">1 Bedroom, Bluewaters Residences 4</div>
+            <div class="card-meta">760 sq ft · Tenanted until March · AED 2,100,000</div>
+            <div class="card-body">
+              Island-facing apartment with a balcony overlooking the promenade.
+              Existing tenancy at AED 145,000 annually transfers with the sale.
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">3 Bedroom, JBR Sadaf 6</div>
+            <div class="card-meta">2,100 sq ft · Vacant · AED 4,400,000</div>
+            <div class="card-body">
+              Beach-access apartment with a maid's room and two balconies. The
+              building completed a full facade refurbishment in 2024.
+            </div>
+          </div>
+        </div>
+        <button class="load-more" onclick="loadMore()">Load more listings</button>
+      </div>
+      <div class="footer-row">
+        <div>Marsa Properties · RERA ORN 21884 · Dubai</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

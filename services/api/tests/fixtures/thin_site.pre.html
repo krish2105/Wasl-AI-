@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+  Fixture: brochureware. Real content, served fully, but nothing an agent can
+  act on — no structured data, no canonical, no stable identifiers, a POST-only
+  contact form, div soup instead of landmarks, and text baked into images.
+
+  This is the negative case for most detectors, and deliberately NOT an empty
+  page: an empty page would pass some checks for the wrong reason.
+-->
+<html>
+<head>
+  <title>Al Wahat Trading</title>
+</head>
+<body>
+  <div class="top">
+    <div class="logo"><img src="/nav-banner.png" alt=""></div>
+    <div class="menu">
+      <div><a href="/about.html">About</a></div>
+      <div><a href="/services.html">Services</a></div>
+      <div><a href="/contact.html">Contact</a></div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <img src="/hero-headline.png" width="1200" height="500">
+    <img src="/services-infographic.png" width="900" height="700">
+    <img src="/our-values.png" width="900" height="400">
+    <img src="/certifications.png" width="800" height="300">
+    <img src="/client-logos.png" width="1000" height="200">
+  </div>
+
+  <div class="body">
+    <div class="heading">Welcome to Al Wahat Trading</div>
+    <div class="text">
+      We are a leading supplier in the region with many years of experience
+      serving clients across a range of sectors. Our commitment to quality and
+      service has made us a trusted partner.
+    </div>
+    <div class="heading">Contact us</div>
+    <form method="post" action="/submit.php">
+      <input type="text" placeholder="Your name">
+      <input type="text" placeholder="Your email">
+      <textarea placeholder="Message"></textarea>
+      <input type="submit" value="Send">
+    </form>
+  </div>
+
+  <div class="foot">
+    <div>Al Wahat Trading LLC</div>
+  </div>
+</body>
+</html>

@@ -15,6 +15,52 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
+
+
+def fixture_html(name: str) -> str:
+    """Read a saved HTML fixture by filename."""
+    return (FIXTURES / name).read_text()
+
+
+def captured(
+    name: str,
+    *,
+    url: str = "https://nadisupply.example/catalogue",
+    status_code: int = 200,
+    headers: dict[str, str] | None = None,
+    degraded: bool = False,
+):
+    """Build a CapturedPage from fixture files.
+
+    Looks for `{name}.pre.html` and `{name}.post.html`. A fixture with only a
+    pre file models a degraded capture — which is the case the rendering
+    detector must suppress rather than score.
+    """
+    from datetime import UTC, datetime
+
+    from wasl.crawler.types import CaptureMode, CapturedPage
+
+    # Single-file fixtures (like the injection payload set) have no phase split.
+    pre_path = FIXTURES / f"{name}.pre.html"
+    if not pre_path.exists():
+        pre_path = FIXTURES / f"{name}.html"
+    post_path = FIXTURES / f"{name}.post.html"
+
+    pre = pre_path.read_text() if pre_path.exists() else ""
+    post = "" if degraded else (post_path.read_text() if post_path.exists() else "")
+
+    return CapturedPage(
+        url=url,
+        final_url=url,
+        status_code=status_code,
+        headers=headers or {"content-type": "text/html; charset=utf-8"},
+        pre_js_html=pre,
+        post_js_html=post,
+        mode=CaptureMode.DEGRADED if degraded else CaptureMode.FULL,
+        response_time_ms=120,
+        fetched_at=datetime.now(UTC),
+    )
 
 
 def _load_dotenv() -> None:

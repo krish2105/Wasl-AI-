@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<!--
+  Fixture: an agent-friendly site. Server-rendered, well-marked-up, with
+  structured data, stable identifiers, a GET search form and crawlable
+  pagination. Used as the positive case for most detectors.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Nadi Supply Co — Industrial Fittings</title>
+  <meta name="description" content="Industrial pipe fittings and valves supplied across the UAE.">
+  <link rel="canonical" href="https://nadisupply.example/catalogue">
+  <link rel="next" href="https://nadisupply.example/catalogue?page=2">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Nadi Supply Co",
+    "url": "https://nadisupply.example",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Warehouse 14, Al Quoz Industrial 3",
+      "addressLocality": "Dubai",
+      "addressCountry": "AE"
+    },
+    "openingHoursSpecification": {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday"],
+      "opens": "08:00",
+      "closes": "18:00"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "Brass Compression Elbow 22mm",
+    "sku": "NSC-BCE-22",
+    "productID": "884213",
+    "gtin13": "5012345678900",
+    "offers": {
+      "@type": "Offer",
+      "price": "14.50",
+      "priceCurrency": "AED",
+      "availability": "https://schema.org/InStock"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [{
+      "@type": "Question",
+      "name": "Do you deliver outside Dubai?",
+      "acceptedAnswer": {"@type": "Answer", "text": "Yes, across all seven emirates."}
+    }]
+  }
+  </script>
+</head>
+<body>
+  <header>
+    <nav aria-label="Primary">
+      <a href="/catalogue">Catalogue</a>
+      <a href="/api-reference">API Reference</a>
+      <a href="/developers">Developer Portal</a>
+      <a href="/contact">Contact</a>
+    </nav>
+    <form method="get" action="/search" id="site-search">
+      <label for="q">Search the catalogue</label>
+      <input type="search" name="q" id="q" required placeholder="e.g. brass elbow">
+      <label for="category">Category</label>
+      <select name="category" id="category">
+        <option value="fittings">Fittings</option>
+        <option value="valves">Valves</option>
+      </select>
+      <button type="submit">Search</button>
+    </form>
+  </header>
+
+  <main>
+    <h1>Industrial Fittings Catalogue</h1>
+    <p>Nadi Supply Co has supplied pipe fittings, valves and flanges to contractors
+       across the United Arab Emirates since 1998. Every item below carries a stable
+       SKU that can be quoted directly to our sales desk or queried through the
+       public API. Stock levels are updated hourly from the Al Quoz warehouse and
+       reflect physical inventory rather than forecast availability.</p>
+
+    <section>
+      <h2>Featured products</h2>
+      <article>
+        <h3><a href="/product/884213">Brass Compression Elbow 22mm</a></h3>
+        <img src="/img/bce-22.jpg" alt="Brass compression elbow, 22 millimetre, side view" width="400" height="300">
+        <p>Corrosion-resistant brass elbow for potable water systems. Sold individually.
+           Conforms to BS EN 1254-2. Working pressure 16 bar at 20 degrees Celsius.</p>
+        <p>AED 14.50 — in stock</p>
+      </article>
+      <article>
+        <h3><a href="/product/884301">Stainless Ball Valve 1 inch</a></h3>
+        <img src="/img/sbv-1.jpg" alt="Stainless steel ball valve, one inch, lever handle" width="400" height="300">
+        <p>316-grade stainless ball valve with a lever handle and full-bore flow.
+           Suitable for potable water, compressed air and low-pressure steam lines.</p>
+        <p>AED 96.00 — in stock</p>
+      </article>
+      <article>
+        <h3><a href="/product/884455">Copper Reducing Tee 28x22mm</a></h3>
+        <img src="/img/crt-2822.jpg" alt="Copper reducing tee fitting, 28 to 22 millimetre" width="400" height="300">
+        <p>End-feed copper reducing tee for soldered joints in heating and
+           plumbing installations. Supplied in boxes of ten.</p>
+        <p>AED 8.75 — in stock</p>
+      </article>
+    </section>
+
+    <nav aria-label="Pagination">
+      <a href="/catalogue?page=1">1</a>
+      <a href="/catalogue?page=2">2</a>
+      <a href="/catalogue?page=3">3</a>
+      <a href="/catalogue?page=2" rel="next">Next</a>
+    </nav>
+  </main>
+
+  <aside>
+    <h2>Trade accounts</h2>
+    <p>Registered contractors receive tiered pricing and 30-day terms.</p>
+  </aside>
+
+  <footer>
+    <a href="/terms">Terms of Service</a>
+    <a href="/privacy">Privacy</a>
+    <p>Nadi Supply Co, Dubai, United Arab Emirates.</p>
+  </footer>
+</body>
+</html>
