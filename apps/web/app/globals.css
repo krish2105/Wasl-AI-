@@ -8,65 +8,117 @@
 
    Direction: a calibrated instrument, not a product page. Wasl's distinguishing
    behaviour is that it refuses — it suppresses a grade band when evidence is
-   thin and publishes what it declined to generate. The interface should read as
-   a lab record: evidence in monospace because the evidence IS the material,
-   generous rules, and colour used semantically rather than decoratively.
+   thin and publishes what it declined to generate. The interface reads as a lab
+   record: monospace because the evidence IS the material, hairline rules, and
+   colour used semantically rather than decoratively.
 
-   Cyanotype blues rather than the near-black-plus-acid-green that scanning
-   tools default to. Two of the six colours carry meaning: `measured` for a
-   confident result, `refused` for a suppressed band or a rejected capability.
-   They are never used for anything else.
+   Cyanotype blues rather than the near-black-plus-acid-green that scanning tools
+   default to.
+
+   TOKENS ARE SEMANTIC, NOT LITERAL. `--surface` not `--ink-900`, so a component
+   written once works in both themes. Light mode is designed, not derived by
+   inverting: it uses warm greys and darker accents, because a blue that reads as
+   "signal" on near-black turns into a hyperlink on white.
    ========================================================================== */
 
-:root {
-  /* Surfaces — deep petrol rather than true black; blueprint, not terminal */
-  --ink-900: #0b1620;
-  --ink-800: #0f1e2b;
-  --ink-700: #16293a;
-  --ink-600: #1f394f;
-  --ink-500: #2c4a63;
+:root,
+.dark {
+  color-scheme: dark;
 
-  /* Foreground */
-  --paper: #ede9e3;
-  --paper-dim: #a8b4c0;
-  --paper-faint: #6b7c8c;
+  /* Surfaces, back to front */
+  --surface: #0b1620;
+  --surface-raised: #101d29;
+  --surface-sunken: #081119;
+  --surface-hover: #16293a;
+  --surface-active: #1f394f;
 
-  /* Semantic — these two carry meaning and are used nowhere else */
-  --measured: #7fb069;
-  --refused: #c1666b;
+  /* Text, most to least prominent */
+  --text: #ede9e3;
+  --text-dim: #a3b1bf;
+  --text-faint: #6b7c8c;
 
-  /* The one accent: what a machine can read */
-  --signal: #4da8da;
+  /* Lines */
+  --border: rgba(237, 233, 227, 0.11);
+  --border-strong: rgba(237, 233, 227, 0.24);
+
+  /* Semantic. These three carry meaning and appear nowhere else. */
+  --signal: #56b0e0; /* a machine can read this */
+  --measured: #7fb069; /* confident result, accepted capability */
+  --refused: #d4747a; /* suppressed band, rejected capability */
+
+  --signal-soft: rgba(86, 176, 224, 0.13);
+  --measured-soft: rgba(127, 176, 105, 0.13);
+  --refused-soft: rgba(212, 116, 122, 0.13);
 
   /* Band scale, low to high */
-  --band-invisible: #5a6b7a;
-  --band-emerging: #7d6b8f;
-  --band-readable: #4da8da;
+  --band-invisible: #6b7c8c;
+  --band-emerging: #9a83ab;
+  --band-readable: #56b0e0;
   --band-ready: #4fa88b;
   --band-native: #7fb069;
 
-  --font-display: "Archivo", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
-
-  --rule: 1px solid rgba(237, 233, 227, 0.12);
-  --rule-strong: 1px solid rgba(237, 233, 227, 0.28);
-
-  --measure: 68ch;
+  --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
 }
 
-/* Light theme is secondary — dark is designed first, per the brief. */
-:root[data-theme="light"] {
-  --ink-900: #ede9e3;
-  --ink-800: #e4dfd8;
-  --ink-700: #d8d2c9;
-  --ink-600: #c9c2b7;
-  --ink-500: #b3aca0;
-  --paper: #0b1620;
-  --paper-dim: #3d4d5c;
-  --paper-faint: #6b7c8c;
-  --rule: 1px solid rgba(11, 22, 32, 0.14);
-  --rule-strong: 1px solid rgba(11, 22, 32, 0.3);
+.light {
+  color-scheme: light;
+
+  /* Warm off-white rather than pure white — this is a page you read for a while.
+     Deliberately not the cream-and-terracotta look; the warmth is 2% not 8%. */
+  --surface: #fbfaf8;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f2efea;
+  --surface-hover: #eeeae4;
+  --surface-active: #e3ded6;
+
+  --text: #12181f;
+  --text-dim: #4a5764;
+  --text-faint: #7d8994;
+
+  --border: rgba(18, 24, 31, 0.12);
+  --border-strong: rgba(18, 24, 31, 0.26);
+
+  /* Darkened for contrast on light ground. The dark-mode signal blue fails WCAG
+     AA on white and reads as a default hyperlink; this one does neither. */
+  --signal: #1c6f9e;
+  --measured: #4a7c3f;
+  --refused: #a83f47;
+
+  --signal-soft: rgba(28, 111, 158, 0.09);
+  --measured-soft: rgba(74, 124, 63, 0.09);
+  --refused-soft: rgba(168, 63, 71, 0.09);
+
+  --band-invisible: #7d8994;
+  --band-emerging: #6f5583;
+  --band-readable: #1c6f9e;
+  --band-ready: #2f7a63;
+  --band-native: #4a7c3f;
+
+  --shadow-raised: 0 1px 2px rgba(18, 24, 31, 0.06), 0 8px 24px -14px rgba(18, 24, 31, 0.18);
+}
+
+/* --- legacy aliases -------------------------------------------------------
+   The first pass used literal colour names. These keep older components
+   working while they migrate to the semantic tokens above; they are not for
+   new code. */
+:root,
+.dark,
+.light {
+  --ink-900: var(--surface);
+  --ink-800: var(--surface-raised);
+  --ink-700: var(--surface-hover);
+  --ink-600: var(--surface-active);
+  --ink-500: var(--text-faint);
+  --paper: var(--text);
+  --paper-dim: var(--text-dim);
+  --paper-faint: var(--text-faint);
+  --rule: 1px solid var(--border);
+  --rule-strong: 1px solid var(--border-strong);
+  --measure: 68ch;
+
+  --font-display: var(--font-archivo), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 * {
@@ -79,44 +131,47 @@ html {
 
 body {
   margin: 0;
-  background: var(--ink-900);
-  color: var(--paper);
+  background: var(--surface);
+  color: var(--text);
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* Theme swap should feel like a light changing, not a page reload — but only
+     on the shell, so text and borders don't smear during the transition. */
+  transition: background-color 220ms ease, color 220ms ease;
 }
 
-/* --- type scale ---------------------------------------------------------- */
+/* --- type ---------------------------------------------------------------- */
 
 .display {
   font-family: var(--font-display);
-  font-weight: 800;
-  /* Wide tracking on caps reads as calibrated rather than shouty. */
-  letter-spacing: -0.03em;
-  line-height: 0.95;
-  font-size: clamp(2.5rem, 7vw, 5.5rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 0.96;
+  font-size: clamp(2.5rem, 7vw, 5.25rem);
 }
 
 .eyebrow {
   font-family: var(--font-mono);
   font-size: 0.7rem;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--paper-faint);
+  color: var(--text-faint);
+  font-weight: 500;
 }
 
 .mono {
   font-family: var(--font-mono);
-  font-size: 0.82rem;
-  letter-spacing: -0.01em;
+  font-size: 0.8rem;
+  letter-spacing: -0.005em;
 }
 
 .lede {
-  font-size: clamp(1.05rem, 2vw, 1.3rem);
-  line-height: 1.55;
-  color: var(--paper-dim);
+  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
+  line-height: 1.6;
+  color: var(--text-dim);
   max-width: var(--measure);
 }
 
@@ -124,29 +179,116 @@ body {
 
 .evidence {
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  line-height: 1.5;
-  background: var(--ink-800);
+  font-size: 0.775rem;
+  line-height: 1.55;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
   border-left: 2px solid var(--signal);
-  padding: 0.75rem 1rem;
+  border-radius: 3px;
+  padding: 0.8rem 1rem;
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-word;
-  color: var(--paper-dim);
+  color: var(--text-dim);
 }
 
 .rule {
   border: 0;
-  border-top: var(--rule);
+  border-top: 1px solid var(--border);
   margin: 0;
+}
+
+/* --- surfaces ------------------------------------------------------------ */
+
+.card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.badge {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  white-space: nowrap;
+}
+
+/* --- controls ------------------------------------------------------------ */
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.15rem;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn-primary {
+  background: var(--signal);
+  color: var(--surface);
+  font-weight: 600;
+}
+.btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+.btn-ghost:hover {
+  background: var(--surface-hover);
+}
+
+.input {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  color: var(--text);
+  padding: 0.7rem 0.9rem;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+.input::placeholder {
+  color: var(--text-faint);
+}
+.input:focus {
+  outline: none;
+  border-color: var(--signal);
+  box-shadow: 0 0 0 3px var(--signal-soft);
 }
 
 /* --- accessibility floor ------------------------------------------------- */
 
-:where(a, button, input, [tabindex]):focus-visible {
+:where(a, button, input, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--signal);
-  outline-offset: 3px;
+  outline-offset: 2px;
   border-radius: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -159,12 +301,6 @@ body {
     scroll-behavior: auto !important;
   }
 }
-
-/* --- the signature: machine view vs human view ---------------------------
-   The pre-JS / post-JS delta is the measurement at the heart of the project.
-   The hero shows that gap rather than describing it: the same content rendered
-   as a machine receives it, and as a person does.
-   ------------------------------------------------------------------------ */
 
 @keyframes resolve-in {
   from {

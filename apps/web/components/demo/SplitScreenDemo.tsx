@@ -32,7 +32,7 @@ export function SplitScreenDemo({ demo }: { demo: Demo }): React.ReactElement {
 
       <div
         className="mt-6 grid gap-px md:grid-cols-2"
-        style={{ background: "rgba(237,233,227,0.12)", border: "var(--rule)" }}
+        style={{ background: "var(--border)", border: "var(--rule)" }}
       >
         <Arm
           label="Against the raw page"

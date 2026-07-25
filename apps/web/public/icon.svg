@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>Wasl</title>
+  <!--
+    "Wasl" is Arabic for connection. The mark is two nodes and the link between
+    them: the left one dashed and hollow (a site a machine cannot read), the
+    right one solid (the same site, made legible). The whole product in a glyph.
+
+    Uses currentColor via a media query rather than a fixed fill so the favicon
+    tracks the browser's theme instead of disappearing into one of them.
+  -->
+  <style>
+    :root { --mark: #0b1620; --link: #56b0e0; }
+    @media (prefers-color-scheme: dark) { :root { --mark: #ede9e3; } }
+  </style>
+  <rect width="32" height="32" rx="7" fill="none"/>
+  <path d="M11 16h10" stroke="var(--link)" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="7" cy="16" r="4.4" fill="none" stroke="var(--mark)" stroke-width="2.2"
+          stroke-dasharray="2.2 2.6" opacity="0.75"/>
+  <circle cx="25" cy="16" r="4.4" fill="var(--mark)"/>
+</svg>

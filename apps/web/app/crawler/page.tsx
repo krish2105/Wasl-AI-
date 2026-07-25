@@ -94,7 +94,7 @@ Disallow: /`}</pre>
           raises them.
         </p>
 
-        <dl className="mt-8 grid gap-px" style={{ background: "rgba(237,233,227,0.12)" }}>
+        <dl className="mt-8 grid gap-px" style={{ background: "var(--border-strong)" }}>
           {facts.map((fact) => (
             <div
               key={fact.label}
@@ -205,7 +205,7 @@ Disallow: /`}</pre>
         </p>
         <p className="mono mt-6">
           <a href="/" style={{ color: "var(--signal)" }}>
-            ← wasl.ai
+            ← back to wasl
           </a>
         </p>
       </footer>

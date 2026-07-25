@@ -59,7 +59,7 @@ export function EvidenceDrawer({
           aria-label="Close evidence"
           onClick={onClose}
           className="absolute inset-0"
-          style={{ background: "rgba(5,11,16,0.72)", border: 0, cursor: "pointer" }}
+          style={{ background: "color-mix(in srgb, var(--surface) 78%, transparent)", border: 0, cursor: "pointer" }}
         />
 
         <motion.div

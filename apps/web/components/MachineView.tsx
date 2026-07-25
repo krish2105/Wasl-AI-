@@ -59,7 +59,7 @@ export function MachineView(): React.ReactElement {
     <figure className="m-0 mt-14">
       <div
         className="grid gap-px md:grid-cols-2"
-        style={{ background: "rgba(237,233,227,0.12)", border: "var(--rule)" }}
+        style={{ background: "var(--border)", border: "var(--rule)" }}
       >
         {/* --- what an agent receives -------------------------------------- */}
         <div className="p-5" style={{ background: "var(--ink-800)" }}>

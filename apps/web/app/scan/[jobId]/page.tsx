@@ -53,10 +53,7 @@ export default function ScanPage({
     <main className="mx-auto max-w-6xl px-6 py-10">
       <header className="flex flex-wrap items-baseline justify-between gap-4">
         <div>
-          <Link href="/" className="mono" style={{ color: "var(--paper-faint)" }}>
-            ← wasl
-          </Link>
-          <h1 className="display mt-3" style={{ fontSize: "clamp(1.6rem, 4vw, 2.6rem)" }}>
+          <h1 className="display" style={{ fontSize: "clamp(1.6rem, 4vw, 2.6rem)" }}>
             {report?.domain ?? "Scanning…"}
           </h1>
           <p className="mono mt-2" style={{ color: "var(--paper-faint)" }}>

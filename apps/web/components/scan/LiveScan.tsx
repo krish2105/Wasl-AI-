@@ -129,7 +129,7 @@ export function LiveScan({
                       : state === "running"
                         ? "var(--signal)"
                         : "var(--ink-500)",
-                  boxShadow: state === "running" ? "0 0 0 4px rgba(77,168,218,0.18)" : "none",
+                  boxShadow: state === "running" ? "0 0 0 4px var(--signal-soft)" : "none",
                 }}
               />
               <span
@@ -150,7 +150,7 @@ export function LiveScan({
 
       {/* --- counters and the log ------------------------------------------ */}
       <div>
-        <div className="grid grid-cols-2 gap-px sm:grid-cols-4" style={{ background: "rgba(237,233,227,0.12)" }}>
+        <div className="grid grid-cols-2 gap-px sm:grid-cols-4" style={{ background: "var(--border)" }}>
           <Counter label="pages" value={counts.pages} />
           <Counter label="evidence" value={counts.evidence} />
           <Counter label="accepted" value={counts.accepted} tone="measured" />
