@@ -66,7 +66,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    # Never "*": this API spends a real, rate-limited crawl budget against third
+    # parties, and a wildcard lets any page on the internet spend it.
+    allow_origins=list(get_settings().cors_origins),
     allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],

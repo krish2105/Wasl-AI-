@@ -1,0 +1,41 @@
+# Build context is the repository root, so this has to exclude the frontend and
+# every local artifact — otherwise `docker build` ships node_modules and a few
+# gigabytes of crawl cache to the daemon before it starts.
+
+.git
+.github
+
+# Frontend — deployed separately to Vercel
+apps/
+
+# Local Python
+**/.venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.ruff_cache/
+**/*.egg-info/
+
+# Node
+**/node_modules/
+**/.next/
+
+# Secrets. Never in an image layer — an image is a distributable artifact and
+# `docker history` reads every layer back.
+.env
+.env.*
+!.env.example
+
+# Local data. Crawl snapshots and reference corpora are large and regenerable;
+# artifacts are per-job.
+data/
+services/api/eval/failures/
+
+# Not needed at runtime
+services/api/tests/
+docs/
+*.md
+!README.md
+docker-compose.yml
+docker/
+.DS_Store

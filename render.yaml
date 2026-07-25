@@ -1,0 +1,55 @@
+# Render blueprint for the Wasl backend.
+#
+# Alternative to fly.toml — same image, same constraints. Pick one.
+#
+# NOTE ON PLAN: `standard` (2 GB), not `starter` (512 MB). Headless Chromium
+# wants ~1 GB resident and a 512 MB instance OOMs partway through a crawl, which
+# surfaces as a scan that silently dies rather than as an obvious error.
+#
+# Render's free tier cannot run this. That is not a configuration problem to
+# solve — it is a real cost of needing a browser, and it is why the public
+# deployment is the frontend alone.
+
+services:
+  - type: web
+    name: wasl-api
+    runtime: docker
+    plan: standard
+    region: frankfurt          # closest to the UAE seed list
+    dockerfilePath: ./services/api/Dockerfile
+    dockerContext: .           # repository root — the image needs seeds/ too
+    healthCheckPath: /health
+    # Migrations run before the new instance takes traffic.
+    preDeployCommand: alembic upgrade head
+
+    disk:
+      name: wasl-data
+      mountPath: /data
+      sizeGB: 3
+
+    envVars:
+      - key: WASL_ENV
+        value: production
+      - key: WASL_PLAYWRIGHT_AVAILABLE
+        value: "true"
+      - key: WASL_DATA_DIR
+        value: /data
+      - key: WASL_CORS_ORIGINS
+        value: https://wasl-ai-eight.vercel.app
+      # Set in the dashboard, not here. A crawler that cannot identify itself
+      # refuses to start, so these two are required rather than optional.
+      - key: WASL_CRAWLER_INFO_URL
+        sync: false
+      - key: WASL_OPT_OUT_EMAIL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      # All free tier. A paid key here would break the $0.00 cost-per-scan claim.
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: CEREBRAS_API_KEY
+        sync: false

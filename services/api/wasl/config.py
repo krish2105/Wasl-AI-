@@ -45,6 +45,14 @@ def _env_bool(name: str, default: bool) -> bool:
     return raw.lower() in {"1", "true", "yes", "on"}
 
 
+def _env_list(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
+    """Comma-separated list, e.g. WASL_CORS_ORIGINS=https://a.app,https://b.app"""
+    raw = _env(name)
+    if not raw:
+        return default
+    return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
 class Settings(BaseModel):
     """Everything the application reads from the environment."""
 
@@ -55,6 +63,12 @@ class Settings(BaseModel):
 
     database_url: str
     redis_url: str
+
+    # Browser origins allowed to call this API. Localhost is included so a
+    # developer needs no configuration; a deployed frontend must be named
+    # explicitly, because `allow_origins=["*"]` on an API that spends real crawl
+    # budget lets anyone else's page spend it.
+    cors_origins: tuple[str, ...] = ("http://localhost:3000",)
 
     data_dir: Path = Field(default=Path("./data"))
 
@@ -190,6 +204,7 @@ def load_settings() -> Settings:
         log_level=_env("WASL_LOG_LEVEL", "INFO"),
         database_url=_env("DATABASE_URL"),
         redis_url=_env("REDIS_URL"),
+        cors_origins=_env_list("WASL_CORS_ORIGINS", ("http://localhost:3000",)),
         data_dir=Path(_env("WASL_DATA_DIR", "./data")),
         crawler_info_url=_env("WASL_CRAWLER_INFO_URL"),
         opt_out_email=_env("WASL_OPT_OUT_EMAIL"),
