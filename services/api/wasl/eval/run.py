@@ -31,6 +31,7 @@ from wasl.crawler.detectors import extract_all
 from wasl.crawler.policy import repo_root
 from wasl.eval.metrics import (
     BY_KEY,
+    MIN_SAMPLES_FOR_A_CLAIM,
     EvalReport,
     MetricClass,
     MetricResult,
@@ -267,10 +268,15 @@ async def build_report(*, router: ModelRouter | None = None) -> EvalReport:
             )
             continue
 
-        detail = f"{golden['sites_compared']} of 30 golden sites compared"
-        if source_key.startswith("band"):
-            detail = f"{golden['band_scored']} sites with a comparable band"
-        report.results.append(MetricResult(BY_KEY[metric_key], golden.get(source_key), detail=detail))
+        samples = golden["band_scored"] if source_key.startswith("band") else golden["sites_compared"]
+        detail = (
+            f"{samples} sites with a comparable band"
+            if source_key.startswith("band")
+            else f"{samples} of 30 golden sites compared"
+        )
+        report.results.append(
+            MetricResult(BY_KEY[metric_key], golden.get(source_key), detail=detail, samples=samples)
+        )
 
     if golden.get("available") and golden.get("circular"):
         report.notes.append(
@@ -366,6 +372,14 @@ def render(report: EvalReport) -> str:
         lines.extend(f"  - {failure}" for failure in report.failures)
         lines.append("")
 
+    thin = report.thin
+    if thin:
+        lines.append(f"THIN ({len(thin)}) — computed, but over too few samples to be a claim")
+        lines.extend(
+            f"  - {r.spec.key}: {r.value_text} over {r.samples} sample(s)" for r in thin
+        )
+        lines.append("")
+
     blocked = report.blocked
     if blocked:
         lines.append(f"BLOCKED ({len(blocked)}) — not estimated, not guessed")
@@ -393,13 +407,26 @@ def render_markdown(report: EvalReport) -> str:
     ]
     for result in report.results:
         status = result.status.value
-        badge = {"PASS": "✅ PASS", "FAIL": "❌ FAIL", "BELOW": "⚠️ BELOW", "BLOCKED": "⏸ BLOCKED"}[status]
+        badge = {
+            "PASS": "✅ PASS",
+            "FAIL": "❌ FAIL",
+            "BELOW": "⚠️ BELOW",
+            "BLOCKED": "⏸ BLOCKED",
+            "THIN": "🔍 THIN",
+        }[status]
         lines.append(
             f"| {result.spec.label} | {result.spec.metric_class.value} | "
             f"`{result.value_text}` | `{result.spec.target_text()}` | {badge} |"
         )
 
     lines.append("")
+    if report.thin:
+        lines.append(
+            "**🔍 THIN** means the metric was computed but over fewer than "
+            f"{MIN_SAMPLES_FOR_A_CLAIM} samples. A figure on a denominator that small is not "
+            "an accuracy claim, so it is not reported as passing."
+        )
+        lines.append("")
     if report.blocked:
         lines.append(
             "**Blocked metrics are not estimated.** "

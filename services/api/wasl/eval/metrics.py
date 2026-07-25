@@ -26,6 +26,14 @@ class Status(StrEnum):
     FAIL = "FAIL"
     BELOW = "BELOW"
     BLOCKED = "BLOCKED"
+    # Computed, but over too few samples to support the claim. "1.000" on a
+    # denominator of one is not an accuracy figure, and letting it render as
+    # PASS is the "94% accurate on 8 examples" failure with extra steps.
+    INSUFFICIENT = "THIN"
+
+
+# Below this many samples a tuning metric reports THIN regardless of its value.
+MIN_SAMPLES_FOR_A_CLAIM = 10
 
 
 @dataclass(frozen=True, slots=True)
@@ -183,9 +191,19 @@ class MetricResult:
     value: float | None
     detail: str = ""
     blocked_reason: str = ""
+    # Denominator this value was computed over. None means "not sample-based"
+    # (a gate over every artifact, a latency percentile).
+    samples: int | None = None
 
     @property
     def status(self) -> Status:
+        if (
+            self.value is not None
+            and self.samples is not None
+            and self.samples < MIN_SAMPLES_FOR_A_CLAIM
+            and self.spec.metric_class is MetricClass.TUNING
+        ):
+            return Status.INSUFFICIENT
         return self.spec.evaluate(self.value)
 
     @property
@@ -219,8 +237,12 @@ class EvalReport:
 
     @property
     def gates_pass(self) -> bool:
-        """A blocked gate is not a passing gate."""
+        """A blocked or thin gate is not a passing gate."""
         return all(r.status is Status.PASS for r in self.of_class(MetricClass.GATE))
+
+    @property
+    def thin(self) -> list[MetricResult]:
+        return [r for r in self.results if r.status is Status.INSUFFICIENT]
 
     @property
     def blocked(self) -> list[MetricResult]:
