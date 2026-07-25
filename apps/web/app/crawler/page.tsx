@@ -11,7 +11,7 @@ import type { Metadata } from "next";
  */
 
 export const metadata: Metadata = {
-  title: "Crawler policy — Wasl AI",
+  title: "Crawler policy",
   description:
     "What the WaslAI-Research crawler fetches, how often, and how to opt out. Read-only, robots-respecting, 0.5 requests per second.",
 };

@@ -1,4 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Leaderboard",
+  description:
+    "Seeded companies ranked by WARI score. Empty until the batch crawl has run — placeholder scores beside real company names are not worth shipping.",
+};
 
 /**
  * Leaderboard shell.
