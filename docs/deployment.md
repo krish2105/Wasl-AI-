@@ -85,16 +85,18 @@ and job state moves to Redis.
 ## Fly.io
 
 ```bash
-fly launch --no-deploy --copy-config
-fly volumes create wasl_data --size 3 --region fra
-fly secrets set \
-  DATABASE_URL="..." \
-  REDIS_URL="..." \
-  WASL_CRAWLER_INFO_URL="https://wasl-ai-eight.vercel.app/crawler" \
-  WASL_OPT_OUT_EMAIL="https://github.com/krish2105/Wasl-AI-/issues" \
-  WASL_CORS_ORIGINS="https://wasl-ai-eight.vercel.app"
-fly deploy
+curl -sL https://fly.io/install.sh | sh
+fly auth login          # browser sign-in — only you can do this step
+./scripts/deploy_backend.sh
 ```
+
+`scripts/deploy_backend.sh` is idempotent: every step checks whether it has
+already happened, so a partial failure is resumed by re-running rather than by
+unpicking what it did. It creates the app and volume, prompts for whichever of
+Postgres/Redis is still missing, sets the crawler identity and CORS origin,
+deploys, and then **fails loudly if `crawler_identity_configured` comes back
+false** — a deployment that looks healthy while refusing every crawl is worse
+than one that does not start.
 
 `fly.toml` sets `auto_stop_machines = false` on purpose: a scan runs for a minute
 or more and streams the whole way, so suspending the machine between requests
