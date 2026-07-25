@@ -29,3 +29,6 @@ services/api/eval/failures/
 
 # OS
 .DS_Store
+
+# Generated during eval runs
+data/artifacts/eval/
