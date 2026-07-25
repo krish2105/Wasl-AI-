@@ -110,6 +110,8 @@ evaluation mistake there is. A `BLOCKED` gate is explicitly *not* a passing gate
 
 ## Architecture
 
+Full write-up, including the decisions and their alternatives: [`docs/architecture.md`](docs/architecture.md).
+
 ```mermaid
 flowchart LR
     subgraph D["Deterministic — no model"]
@@ -320,7 +322,7 @@ wasl-ai/
 │       ├── eval/                metrics · runner · README auto-write
 │       └── security/            injection scanner (9 pattern categories)
 ├── seeds/                       101 seed URLs · 30-site golden set scaffold
-├── docs/                        crawler policy
+├── docs/                        architecture · limitations · crawler policy · deployment
 └── scripts/                     verify_seeds · fetch_reference_corpora
 ```
 
@@ -340,6 +342,8 @@ cd apps/web && pnpm typecheck && pnpm build
 ---
 
 ## Limitations
+
+The complete version, with sample sizes and causes: [`docs/limitations.md`](docs/limitations.md).
 
 Stated before anyone else finds them.
 
