@@ -34,6 +34,29 @@ class ConfigurationError(RuntimeError):
     """Raised when the process is configured in a way that is unsafe to run."""
 
 
+def _repo_root() -> Path:
+    """Repository root, found by walking up for a marker."""
+    here = Path(__file__).resolve()
+    for candidate in here.parents:
+        if (candidate / "seeds" / "seed_urls.yaml").exists() or (candidate / ".git").is_dir():
+            return candidate
+    return here.parents[3]
+
+
+def _resolve_data_dir(raw: str) -> Path:
+    """Anchor a relative WASL_DATA_DIR to the repo root, not the working directory.
+
+    `./data` resolved against cwd meant the crawl cache landed in a different
+    place depending on where a command was run from — so the cache silently
+    failed at its only job, which is to stop us re-fetching third-party sites.
+    It also put cached pages outside the path .gitignore was anchored to.
+
+    An absolute path is honoured as given; containers set /data.
+    """
+    path = Path(raw)
+    return path if path.is_absolute() else (_repo_root() / path).resolve()
+
+
 def _env(name: str, default: str = "") -> str:
     return os.environ.get(name, default).strip()
 
@@ -205,7 +228,7 @@ def load_settings() -> Settings:
         database_url=_env("DATABASE_URL"),
         redis_url=_env("REDIS_URL"),
         cors_origins=_env_list("WASL_CORS_ORIGINS", ("http://localhost:3000",)),
-        data_dir=Path(_env("WASL_DATA_DIR", "./data")),
+        data_dir=_resolve_data_dir(_env("WASL_DATA_DIR", "./data")),
         crawler_info_url=_env("WASL_CRAWLER_INFO_URL"),
         opt_out_email=_env("WASL_OPT_OUT_EMAIL"),
         playwright_available=_env_bool("WASL_PLAYWRIGHT_AVAILABLE", True),

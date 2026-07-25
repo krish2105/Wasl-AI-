@@ -21,6 +21,7 @@ reports honestly when it cannot.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -89,6 +90,16 @@ CHAIN: dict[Role, tuple[ModelSpec, ...]] = {
         ModelSpec("ollama", "ollama_chat/qwen2.5:7b", None, 32_000),
     ),
 }
+
+
+# No model call may run unbounded. A provider that accepts a request and then
+# never answers is indistinguishable from a slow one at the socket level, and
+# tenacity's retry never fires because nothing raises — the call simply hangs.
+# Observed for real: a golden-set run sat 42 minutes on an ESTABLISHED but idle
+# connection to Ollama, holding up the whole batch.
+#
+# In production this would hang a user's scan and its SSE stream with it.
+LLM_TIMEOUT_SECONDS = 120
 
 
 class AllProvidersFailed(RuntimeError):
@@ -265,6 +276,7 @@ class ModelRouter:
             "messages": [{"role": "user", "content": prompt}],
             "temperature": temperature,
             "max_tokens": max_tokens,
+            "timeout": LLM_TIMEOUT_SECONDS,
         }
 
         key = self._key_for(spec)
@@ -294,7 +306,9 @@ class ModelRouter:
             prompt_name=prompt_name,
             prompt_sha=prompt_sha,
         ) as span:
-            response = await litellm.acompletion(**kwargs)
+            response = await asyncio.wait_for(
+                litellm.acompletion(**kwargs), timeout=LLM_TIMEOUT_SECONDS + 15
+            )
 
             content = response.choices[0].message.content or ""
             usage = getattr(response, "usage", None)

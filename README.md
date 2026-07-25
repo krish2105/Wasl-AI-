@@ -75,7 +75,7 @@ An uncited capability cannot be *constructed*. Not "is rejected later" — canno
 Every number below is written by `wasl.eval.run`. None was typed by hand.
 
 <!-- EVAL_TABLE_START -->
-_Golden set: 30 sites (0 hand-labelled) · model `ollama/qwen2.5:7b` · run 2026-07-25._
+_Golden set: 30 sites (22 model-labelled) · model `ollama/qwen2.5:7b` · run 2026-07-25._
 
 | Metric | Class | Result | Target | Status |
 |---|---|---:|---:|---|
@@ -83,18 +83,20 @@ _Golden set: 30 sites (0 hand-labelled) · model `ollama/qwen2.5:7b` · run 2026
 | Hallucinated-capability rate | gate | `0.000` | `==0` | ✅ PASS |
 | State-changing tools emitted | gate | `0.000` | `==0` | ✅ PASS |
 | Generated server import rate | gate | `1.000` | `==1` | ✅ PASS |
-| Capability precision | tuning | `—` | `>=0.9` | ⏸ BLOCKED |
-| Capability recall | tuning | `—` | `>=0.7` | ⏸ BLOCKED |
-| Band accuracy (exact) | tuning | `—` | `>=0.7` | ⏸ BLOCKED |
-| Band accuracy (±1 band) | tuning | `—` | `—` | ⏸ BLOCKED |
+| Capability precision* | tuning | `0.045` | `>=0.9` | ⚠️ BELOW |
+| Capability recall* | tuning | `0.015` | `>=0.7` | ⚠️ BELOW |
+| Band accuracy, exact* | tuning | `0.556` | `>=0.7` | ⚠️ BELOW |
+| Band accuracy, ±1* | tuning | `1.000` | `—` | ✅ PASS |
 | Injection detection recall | tuning | `1.000` | `>=0.9` | ✅ PASS |
 | Score stability (max delta) | operating | `0.0` | `<=4` | ✅ PASS |
-| Latency p95 | operating | `62.6` | `<=90` | ✅ PASS |
+| Latency p95 | operating | `103.3` | `<=90` | ⚠️ BELOW |
 | Cost per scan | operating | `0.00` | `==0` | ✅ PASS |
 
-**Blocked metrics are not estimated.** `capability_precision`, `capability_recall`, `band_accuracy_exact`, `band_accuracy_within_1` require hand-labelled ground truth in `seeds/golden/labels.yaml`. The system must never generate its own labels — that would make the evaluation circular and every number above meaningless.
+> The three label-dependent metrics are marked with an asterisk and named judge_labelled_*. seeds/golden/labels.yaml declares label_source: model, so they measure agreement with the labelling model rather than correctness. The four boolean label fields are independent observations and are not affected.
 
-> Scans run against saved HTML fixtures, not live sites: the crawler refuses to start until WASL_CRAWLER_INFO_URL and WASL_OPT_OUT_EMAIL point at a live page and a real mailbox. Every model call, validator and critic rule is the production one; only the network is skipped.
+> Band accuracy is computed over 18 sites, not 30: eight of the golden set blocked automated access at labelling time and were left deliberately unlabelled rather than guessed.
+
+> Two populations, deliberately. The GATES and OPERATING metrics run against three saved fixtures, which is what makes them reproducible by anyone who clones the repository. The three label-dependent TUNING metrics run against live crawls of the golden set, because agreement with a label is only meaningful against the real site.
 
 <!-- EVAL_TABLE_END -->
 
@@ -340,6 +342,28 @@ cd apps/web && pnpm typecheck && pnpm build
 ## Limitations
 
 Stated before anyone else finds them.
+
+**Capability induction essentially fails on the offline model tier.** Precision 0.045, recall
+0.015 across 22 real sites. The local `qwen2.5:7b` proposes almost nothing usable once evidence is
+messy rather than synthetic — one site out of twenty-two produced a capability matching its label.
+The pipeline around it works (citations resolve, the critic refuses, nothing hallucinated), but the
+induction step needs a stronger model than the free offline tier. This is the single biggest gap in
+the system and it is not fixable by prompt tuning.
+
+**Wasl systematically underrates API-first companies by exactly one band.** Stripe, Twilio, GitHub
+and Shopify all scored `Readable` against a labelled `Agent-Ready` — four out of four, same
+direction, same magnitude. The cause is specific and fixable: Axis 3 probes only `/openapi.json` and
+`/swagger.json`, and all four publish their OpenAPI specs on GitHub instead. They lose 6 points they
+arguably deserve. Widening the prober, or following `rel="describedby"` links, is the obvious fix
+and is not yet done.
+
+**Band accuracy is 0.556 exact against a 0.70 target, but 1.000 within one band** over 18 comparable
+sites. Never wrong by more than one band is a meaningfully different failure shape from randomly
+wrong, and the four SaaS misses above account for most of the exact-match gap.
+
+**Latency p95 is 117.6s against a 90s target.** The demo node's claim verification added model
+calls, and on the offline tier each one is slow. A hosted free-tier key would bring this under
+target without changing anything else.
 
 **The golden labels are model-authored, so three metrics are circular.** At the repository
 owner's direction, `capabilities`, `expected_band` and `notes` in `seeds/golden/labels.yaml` were

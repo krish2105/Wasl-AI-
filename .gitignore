@@ -19,9 +19,18 @@ node_modules/
 
 # Wasl data — all gitignored. Reference corpora are large, crawl snapshots are
 # third-party page content we do not republish, and artifacts are regenerable.
-data/reference/
-data/cache/
-data/artifacts/
+# NOTE the leading **/. A pattern containing an internal slash is anchored to the
+# repository root, so `data/cache/` matched /data/cache/ but NOT
+# services/api/data/cache/ — which is where the cache actually landed, because
+# WASL_DATA_DIR was resolved relative to the working directory.
+#
+# GitHub push protection caught the result: 304 cached third-party pages staged
+# for commit, one containing another site's Mapbox token. Publishing crawl cache
+# would also breach our own crawler policy, which says we do not republish
+# substantial content from any site.
+**/data/reference/
+**/data/cache/
+**/data/artifacts/
 *.zip
 
 # Eval output — regenerable; the README table is the committed artifact
@@ -31,7 +40,7 @@ services/api/eval/failures/
 .DS_Store
 
 # Generated during eval runs
-data/artifacts/eval/
+**/data/artifacts/eval/
 
 # Next.js local overrides
 apps/web/.env.local

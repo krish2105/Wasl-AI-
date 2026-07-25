@@ -46,6 +46,11 @@ RESULTS = repo_root() / "seeds" / "golden" / "results.json"
 # rate limit — that limiter is a shared Redis reservation, not a local sleep.
 MAX_CONCURRENT_SITES = 4
 
+# A crawl plus three model stages. Generous, but bounded: without a ceiling one
+# unresponsive site holds the entire batch, and a scan that never returns is
+# worse than a site recorded as timed out.
+PER_SITE_TIMEOUT_SECONDS = 600
+
 
 def load_labels() -> dict[str, Any]:
     return yaml.safe_load(LABELS.read_text())
@@ -119,12 +124,27 @@ async def run_scans(limit: int | None = None) -> list[dict[str, Any]]:
     router = ModelRouter()
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_SITES)
     done = 0
+    _partial: list[dict[str, Any]] = []
 
     async def guarded(site: dict[str, Any]) -> dict[str, Any]:
         nonlocal done
         async with semaphore:
-            result = await scan_one(site, router)
+            try:
+                result = await asyncio.wait_for(
+                    scan_one(site, router), timeout=PER_SITE_TIMEOUT_SECONDS
+                )
+            except TimeoutError:
+                result = {
+                    "name": site["name"],
+                    "url": site["url"],
+                    "error": f"timed out after {PER_SITE_TIMEOUT_SECONDS}s",
+                    "seconds": PER_SITE_TIMEOUT_SECONDS,
+                }
             done += 1
+            # Persist as we go: results.json only being written at the end meant
+            # a stall discarded every completed scan with it.
+            _partial.append(result)
+            RESULTS.write_text(json.dumps(_partial, indent=2))
             marker = "!" if result.get("error") else "+"
             print(
                 f"  {marker} [{done:>2}/{len(sites)}] {site['name']:<26} "

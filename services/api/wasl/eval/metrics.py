@@ -231,6 +231,7 @@ class EvalReport:
     run_date: str = ""
     failures: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    labels_are_model_authored: bool = False
 
     def of_class(self, metric_class: MetricClass) -> list[MetricResult]:
         return [r for r in self.results if r.spec.metric_class is metric_class]

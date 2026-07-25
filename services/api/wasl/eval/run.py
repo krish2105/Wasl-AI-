@@ -278,6 +278,7 @@ async def build_report(*, router: ModelRouter | None = None) -> EvalReport:
             MetricResult(BY_KEY[metric_key], golden.get(source_key), detail=detail, samples=samples)
         )
 
+    report.labels_are_model_authored = bool(golden.get("circular"))
     if golden.get("available") and golden.get("circular"):
         report.notes.append(
             "The three label-dependent metrics are marked with an asterisk and named "
@@ -327,10 +328,11 @@ async def build_report(*, router: ModelRouter | None = None) -> EvalReport:
     )
 
     report.notes.append(
-        "Scans run against saved HTML fixtures, not live sites: the crawler refuses to "
-        "start until WASL_CRAWLER_INFO_URL and WASL_OPT_OUT_EMAIL point at a live page "
-        "and a real mailbox. Every model call, validator and critic rule is the "
-        "production one; only the network is skipped."
+        "Two populations, deliberately. The GATES and OPERATING metrics run against three "
+        "saved fixtures, which is what makes them reproducible by anyone who clones the "
+        "repository. The three label-dependent TUNING metrics run against live crawls of "
+        "the golden set, because agreement with a label is only meaningful against the "
+        "real site."
     )
     if blocked_reason:
         report.notes.append(
@@ -398,8 +400,11 @@ def render(report: EvalReport) -> str:
 
 def render_markdown(report: EvalReport) -> str:
     """The README table — the artifact people actually read."""
+    # "hand-labelled" would be a lie while label_source is model, and this line
+    # is the first thing anyone reads.
+    labelling = "model-labelled" if report.labels_are_model_authored else "hand-labelled"
     lines = [
-        f"_Golden set: {report.golden_set_size} sites ({report.golden_labelled} hand-labelled) · "
+        f"_Golden set: {report.golden_set_size} sites ({report.golden_labelled} {labelling}) · "
         f"model `{report.model}` · run {report.run_date}._",
         "",
         "| Metric | Class | Result | Target | Status |",
