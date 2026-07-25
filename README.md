@@ -341,8 +341,21 @@ cd apps/web && pnpm typecheck && pnpm build
 
 Stated before anyone else finds them.
 
-**Four metrics are unmeasured.** Capability precision, recall and band accuracy need 30 hand-labelled
-sites; the labels do not exist yet. They report `BLOCKED`, never an estimate.
+**The golden labels are model-authored, so three metrics are circular.** At the repository
+owner's direction, `capabilities`, `expected_band` and `notes` in `seeds/golden/labels.yaml` were
+written by a model rather than hand-labelled. Capability precision, capability recall and band
+accuracy are computed against them, which means they measure *agreement with the labelling model*,
+not correctness. They are reported as `judge_labelled_*` and carry an asterisk everywhere they
+appear. **Do not quote them as accuracy figures.**
+
+The four boolean fields — `has_jsonld`, `has_llms_txt`, `has_openapi_spec`, `has_agent_manifest` —
+are *not* circular: they come from `scripts/probe_golden.py`, which issues plain HTTP requests and
+does not use Wasl's detectors. Raw observations are in `seeds/golden/observations.json`, which turns
+re-labelling by hand into a review task rather than a research task.
+
+**Eight of the thirty golden sites blocked observation** and are deliberately left unlabelled rather
+than guessed. Band accuracy is computed over the remainder, and the reduced denominator is reported
+alongside it.
 
 **Scans currently run against fixtures, not live sites.** The crawler refuses to start without a
 configured identity — a User-Agent advertising a URL nobody can read is dishonest identification.

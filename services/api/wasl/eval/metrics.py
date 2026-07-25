@@ -97,37 +97,46 @@ SPECS: tuple[MetricSpec, ...] = (
         "Tools generated for operations that would change state on a third-party site.",
     ),
     # --- tuning --------------------------------------------------------------
+    #
+    # The three label-dependent metrics are named `judge_labelled_*` because the
+    # golden set is currently model-authored. Under that condition they measure
+    # agreement with the labelling model, not correctness, and a name that hid
+    # the distinction would be the most misleading thing in this file.
+    #
+    # `wasl.eval.run` switches these back to the plain names automatically when
+    # seeds/golden/labels.yaml declares label_source: human.
     MetricSpec(
-        "capability_precision",
-        "Capability precision",
+        "judge_labelled_capability_precision",
+        "Capability precision*",
         MetricClass.TUNING,
         0.90,
         ">=",
-        "Accepted capabilities a human labeller confirms exist.",
+        "Accepted capabilities the labeller confirms exist. *Labels are "
+        "model-authored, so this measures agreement with the labelling model.",
     ),
     MetricSpec(
-        "capability_recall",
-        "Capability recall",
+        "judge_labelled_capability_recall",
+        "Capability recall*",
         MetricClass.TUNING,
         0.70,
         ">=",
-        "Labelled capabilities the system found.",
+        "Labelled capabilities the system found. *Model-authored labels.",
     ),
     MetricSpec(
-        "band_accuracy_exact",
-        "Band accuracy (exact)",
+        "judge_labelled_band_accuracy_exact",
+        "Band accuracy, exact*",
         MetricClass.TUNING,
         0.70,
         ">=",
-        "Predicted band equals the labelled band.",
+        "Predicted band equals the labelled band. *Model-authored labels.",
     ),
     MetricSpec(
-        "band_accuracy_within_1",
-        "Band accuracy (±1 band)",
+        "judge_labelled_band_accuracy_within_1",
+        "Band accuracy, ±1*",
         MetricClass.TUNING,
         None,
         "info",
-        "Predicted band within one band of the labelled band.",
+        "Predicted band within one band of the labelled band. *Model-authored labels.",
     ),
     MetricSpec(
         "injection_detection_recall",

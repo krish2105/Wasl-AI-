@@ -1,496 +1,634 @@
 # WASL AI — GOLDEN EVAL SET (30 sites)
 #
 # =============================================================================
-# THIS FILE IS FILLED IN BY A HUMAN, BY HAND. CLAUDE MUST NEVER WRITE A LABEL.
+# ⚠  THESE LABELS ARE MODEL-AUTHORED, NOT HAND-LABELLED BY A HUMAN.
 # =============================================================================
 #
-# If the system under test generates its own ground truth, the eval is circular
-# and every number downstream of it is worthless. This scaffold was generated;
-# the labels were not, and must not be.
+# Written by Claude at the explicit direction of the repository owner, after the
+# circularity objection was raised and overruled. What that costs, stated plainly
+# so nobody has to work it out:
 #
-# Roughly 2-4 hours. It is the cheapest credibility this project will ever buy.
+#   capability_precision, capability_recall and band_accuracy are computed
+#   against these labels. Because a model authored the judgement fields, those
+#   three metrics measure "does Wasl agree with the labelling model" rather than
+#   "is Wasl correct". They are reported under judge_labelled_* names and carry
+#   an asterisk everywhere they appear.
 #
-# -----------------------------------------------------------------------------
-# HOW TO LABEL A SITE
-# -----------------------------------------------------------------------------
+#   The four boolean fields are NOT circular. They come from
+#   scripts/probe_golden.py, which issues plain HTTP requests and does not use
+#   Wasl's detectors — so has_llms_txt is an observation, not a tautology.
 #
-# Open the site in a normal browser. Look at the actual page source where
-# needed (view-source, or devtools). Do NOT run Wasl first and then check
-# whether you agree with it — that is how a labeller talks themselves into the
-# system's answer.
-#
-# capabilities:
-#   List what an AI agent could actually DO on this site, as read-only
-#   operations. See the granularity rule below — it matters more than it looks.
-#
-# has_openapi_spec / has_jsonld / has_llms_txt / has_agent_manifest:
-#   true/false. Check directly: /openapi.json, view-source for
-#   application/ld+json, /llms.txt, /.well-known/mcp.json.
-#
-# expected_band:
-#   One of: Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-#   Your judgement of where the site lands, made BEFORE seeing Wasl's answer.
-#
-# notes:
-#   Anything that made the call hard. These become the most useful entries when
-#   a metric later disagrees with you.
+# To make these metrics mean what they claim: replace the authored fields by
+# hand, set label_source to "human", and rename the metrics back. The
+# observations in seeds/golden/observations.json make that a review task rather
+# than a research task.
 #
 # -----------------------------------------------------------------------------
-# CAPABILITY GRANULARITY RULE  (settle this before you start, not after)
-# -----------------------------------------------------------------------------
-#
-# Precision and recall are meaningless unless "one capability" means the same
-# thing on every site. The rule for this eval set:
+# CAPABILITY GRANULARITY RULE
 #
 #   A capability is ONE distinct (verb, noun) pair reachable through ONE
 #   mechanism.
 #
-#   * "search products" and "filter products by price" are ONE capability if the
-#     filter is a parameter on the same search endpoint or form. They are TWO if
-#     filtering happens through a genuinely separate mechanism.
-#
-#   * "get product details" and "get product reviews" are TWO capabilities —
-#     different nouns, even on the same URL pattern.
-#
-#   * "search products" and "search services" are TWO capabilities — different
-#     nouns — even if one search box covers both. An agent has to know which it
-#     is asking for.
-#
+#   * "search products" and "filter products by price" are ONE capability when
+#     the filter is a parameter on the same endpoint or form.
+#   * "get product details" and "get product reviews" are TWO — different nouns.
 #   * Pagination, sorting and output format are NEVER separate capabilities.
-#     They are parameters.
-#
-# When genuinely torn, write BOTH readings in `notes` and pick the coarser one.
-# Coarse labels understate recall slightly; fine labels inflate it a lot.
 #
 # -----------------------------------------------------------------------------
-# COMPOSITION (matches the spec: 6/5/5/4/4/3/3 = 30)
-#   6 e-commerce | 5 real estate | 5 hospitality/travel | 4 government/public
-#   4 SaaS/API-first | 3 automotive | 3 logistics
+# UNOBSERVABLE SITES
+#
+#   Eight of the thirty blocked automated access (401/403/timeout) at labelling
+#   time. They carry observable: false and a null band. Guessing a band for a
+#   site nobody could read would be inventing ground truth twice over, so the
+#   eval excludes them from band accuracy and reports the reduced denominator.
+#
+# COMPOSITION: 6 e-commerce | 5 real estate | 5 hospitality/travel
+#              4 government/public | 4 SaaS/API-first | 3 automotive | 3 logistics
 # -----------------------------------------------------------------------------
 
-version: 1
-labelled_by: null          # your name — recorded next to the metrics
-labelled_at: null          # YYYY-MM-DD
-granularity_rule: "one distinct (verb, noun) pair reachable through one mechanism"
-
+version: 2
+label_source: model
+labelled_by: Claude Opus 5, at repository owner's direction
+labelled_at: '2026-07-25'
+circular: true
+circularity_note: capabilities, expected_band and notes are model-authored, so metrics computed against
+  them measure agreement with the labelling model rather than correctness. The boolean fields are independent
+  observations from scripts/probe_golden.py.
+granularity_rule: one distinct (verb, noun) pair reachable through one mechanism
+observable_sites: 22
 sites:
-
-  - name: "Noon"
-    url: "https://www.noon.com"
-    sector: "e-commerce"
-    group: "uae_retail_ecommerce"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Amazon.ae"
-    url: "https://www.amazon.ae"
-    sector: "e-commerce"
-    group: "uae_retail_ecommerce"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Namshi"
-    url: "https://www.namshi.com"
-    sector: "e-commerce"
-    group: "uae_retail_ecommerce"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Ounass"
-    url: "https://www.ounass.ae"
-    sector: "e-commerce"
-    group: "uae_retail_ecommerce"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Sharaf DG"
-    url: "https://uae.sharafdg.com"
-    sector: "e-commerce"
-    group: "uae_retail_ecommerce"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Lulu Hypermarket"
-    url: "https://www.luluhypermarket.com"
-    sector: "e-commerce"
-    group: "uae_retail_ecommerce"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Bayut"
-    url: "https://www.bayut.com"
-    sector: "real estate"
-    group: "uae_realestate"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Property Finder"
-    url: "https://www.propertyfinder.ae"
-    sector: "real estate"
-    group: "uae_realestate"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Emaar Properties"
-    url: "https://www.emaar.com"
-    sector: "real estate"
-    group: "uae_realestate"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "DAMAC Properties"
-    url: "https://www.damacproperties.com"
-    sector: "real estate"
-    group: "uae_realestate"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Betterhomes"
-    url: "https://www.bhomes.com"
-    sector: "real estate"
-    group: "uae_realestate"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Emirates"
-    url: "https://www.emirates.com"
-    sector: "hospitality/travel"
-    group: "uae_travel_hospitality"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "flydubai"
-    url: "https://www.flydubai.com"
-    sector: "hospitality/travel"
-    group: "uae_travel_hospitality"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Jumeirah"
-    url: "https://www.jumeirah.com"
-    sector: "hospitality/travel"
-    group: "uae_travel_hospitality"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Atlantis The Palm"
-    url: "https://www.atlantis.com"
-    sector: "hospitality/travel"
-    group: "uae_travel_hospitality"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Visit Dubai (DET)"
-    url: "https://www.visitdubai.com"
-    sector: "hospitality/travel"
-    group: "uae_travel_hospitality"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "DubiCars"
-    url: "https://www.dubicars.com"
-    sector: "automotive"
-    group: "uae_automotive"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "YallaMotor"
-    url: "https://uae.yallamotor.com"
-    sector: "automotive"
-    group: "uae_automotive"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Arabian Automobiles"
-    url: "https://www.arabianautomobiles.com"
-    sector: "automotive"
-    group: "uae_automotive"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "DP World"
-    url: "https://www.dpworld.com"
-    sector: "logistics"
-    group: "uae_logistics_trade"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Aramex"
-    url: "https://www.aramex.com"
-    sector: "logistics"
-    group: "uae_logistics_trade"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Emirates Post"
-    url: "https://www.emiratespost.ae"
-    sector: "logistics"
-    group: "uae_logistics_trade"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "UAE Government Portal"
-    url: "https://u.ae"
-    sector: "government/public"
-    group: "uae_government_public"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "MOHRE"
-    url: "https://www.mohre.gov.ae"
-    sector: "government/public"
-    group: "uae_government_public"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Federal Tax Authority"
-    url: "https://tax.gov.ae"
-    sector: "government/public"
-    group: "uae_government_public"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Dubai Land Department"
-    url: "https://dubailand.gov.ae"
-    sector: "government/public"
-    group: "uae_government_public"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Stripe"
-    url: "https://stripe.com"
-    sector: "SaaS/API-first"
-    group: "global_api_first_reference"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Twilio"
-    url: "https://www.twilio.com"
-    sector: "SaaS/API-first"
-    group: "global_api_first_reference"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "GitHub"
-    url: "https://github.com"
-    sector: "SaaS/API-first"
-    group: "global_api_first_reference"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
-
-  - name: "Shopify"
-    url: "https://www.shopify.com"
-    sector: "SaaS/API-first"
-    group: "global_api_first_reference"
-
-    # --- fill in below this line -------------------------------------------
-    capabilities: null       # e.g. ["search products", "get product details"]
-    has_openapi_spec: null   # true | false
-    has_jsonld: null         # true | false
-    has_llms_txt: null       # true | false
-    has_agent_manifest: null # true | false
-    expected_band: null      # Invisible | Emerging | Readable | Agent-Ready | Agent-Native
-    notes: null
+- name: Noon
+  url: https://www.noon.com
+  sector: e-commerce
+  group: uae_retail_ecommerce
+  observable: false
+  has_jsonld: null
+  has_llms_txt: null
+  has_openapi_spec: null
+  has_agent_manifest: null
+  has_ai_robots_stanza: null
+  jsonld_types: null
+  capabilities: null
+  expected_band: null
+  notes: Blocked automated access at labelling time (HTTP timeout); not observable, so not labelled.
+- name: Amazon.ae
+  url: https://www.amazon.ae
+  sector: e-commerce
+  group: uae_retail_ecommerce
+  observable: true
+  has_jsonld: false
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: true
+  jsonld_types: []
+  capabilities:
+  - search products
+  - get product details
+  - list categories
+  expected_band: Readable
+  notes: Homepage carries no JSON-LD; product pages do. A 12-page interactive crawl that lands mostly
+    on category pages will understate Axis 2.
+- name: Namshi
+  url: https://www.namshi.com
+  sector: e-commerce
+  group: uae_retail_ecommerce
+  observable: false
+  has_jsonld: null
+  has_llms_txt: null
+  has_openapi_spec: null
+  has_agent_manifest: null
+  has_ai_robots_stanza: null
+  jsonld_types: null
+  capabilities: null
+  expected_band: null
+  notes: Blocked automated access at labelling time (HTTP timeout); not observable, so not labelled.
+- name: Ounass
+  url: https://www.ounass.ae
+  sector: e-commerce
+  group: uae_retail_ecommerce
+  observable: true
+  has_jsonld: true
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types:
+  - OnlineStore
+  - Person
+  - Organization
+  - ContactPoint
+  - PostalAddress
+  capabilities:
+  - search products
+  - get product details
+  - list brands
+  expected_band: Readable
+  notes: OnlineStore JSON-LD on the homepage. No API, no llms.txt.
+- name: Sharaf DG
+  url: https://uae.sharafdg.com
+  sector: e-commerce
+  group: uae_retail_ecommerce
+  observable: true
+  has_jsonld: false
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: true
+  jsonld_types: []
+  capabilities:
+  - search products
+  - get product details
+  - list store locations
+  expected_band: Emerging
+  notes: Names AI crawlers in robots.txt but publishes no structured data on the homepage — aware of agents
+    without being readable by them.
+- name: Lulu Hypermarket
+  url: https://www.luluhypermarket.com
+  sector: e-commerce
+  group: uae_retail_ecommerce
+  observable: true
+  has_jsonld: true
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types:
+  - WebSite
+  - SearchAction
+  - EntryPoint
+  capabilities:
+  - search products
+  - get product details
+  - list store locations
+  expected_band: Readable
+  notes: WebSite + SearchAction JSON-LD gives a constructible search URL.
+- name: Bayut
+  url: https://www.bayut.com
+  sector: real estate
+  group: uae_realestate
+  observable: true
+  has_jsonld: false
+  has_llms_txt: true
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types: []
+  capabilities:
+  - search properties
+  - get property listing
+  - list agents
+  - get area guide
+  expected_band: Readable
+  notes: Publishes an llms.txt. Homepage carries no JSON-LD; listing pages do. Returned 401 to a HEAD
+    request during seed verification but serves GET normally.
+- name: Property Finder
+  url: https://www.propertyfinder.ae
+  sector: real estate
+  group: uae_realestate
+  observable: true
+  has_jsonld: true
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types:
+  - WebSite
+  - Organization
+  - SearchAction
+  - EntryPoint
+  capabilities:
+  - search properties
+  - get property listing
+  - list agents
+  expected_band: Readable
+  notes: WebSite + SearchAction + Organization JSON-LD gives a constructible search URL.
+- name: Emaar Properties
+  url: https://www.emaar.com
+  sector: real estate
+  group: uae_realestate
+  observable: true
+  has_jsonld: false
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: true
+  jsonld_types: []
+  capabilities:
+  - list developments
+  - get development details
+  expected_band: Emerging
+  notes: Names AI crawlers in robots.txt but publishes no structured data. Developer sites score lower
+    than listing portals, as the sector hypothesis predicted.
+- name: DAMAC Properties
+  url: https://www.damacproperties.com
+  sector: real estate
+  group: uae_realestate
+  observable: false
+  has_jsonld: null
+  has_llms_txt: null
+  has_openapi_spec: null
+  has_agent_manifest: null
+  has_ai_robots_stanza: null
+  jsonld_types: null
+  capabilities: null
+  expected_band: null
+  notes: Blocked automated access at labelling time (HTTP 403); not observable, so not labelled.
+- name: Betterhomes
+  url: https://www.bhomes.com
+  sector: real estate
+  group: uae_realestate
+  observable: true
+  has_jsonld: true
+  has_llms_txt: true
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: true
+  jsonld_types:
+  - WebSite
+  - Organization
+  - SearchAction
+  - EntryPoint
+  - WebPage
+  - ViewAction
+  - BreadcrumbList
+  - ListItem
+  - RealEstateAgent
+  - LocalBusiness
+  - AggregateRating
+  - OfferCatalog
+  capabilities:
+  - search properties
+  - get property listing
+  - list agents
+  expected_band: Readable
+  notes: llms.txt, AI-agent stanza and SearchAction JSON-LD together — the most complete Axis 1 in the
+    real-estate group.
+- name: Emirates
+  url: https://www.emirates.com
+  sector: hospitality/travel
+  group: uae_travel_hospitality
+  observable: false
+  has_jsonld: null
+  has_llms_txt: null
+  has_openapi_spec: null
+  has_agent_manifest: null
+  has_ai_robots_stanza: null
+  jsonld_types: null
+  capabilities: null
+  expected_band: null
+  notes: Blocked automated access at labelling time (HTTP 403); not observable, so not labelled.
+- name: flydubai
+  url: https://www.flydubai.com
+  sector: hospitality/travel
+  group: uae_travel_hospitality
+  observable: false
+  has_jsonld: null
+  has_llms_txt: null
+  has_openapi_spec: null
+  has_agent_manifest: null
+  has_ai_robots_stanza: null
+  jsonld_types: null
+  capabilities: null
+  expected_band: null
+  notes: Blocked automated access at labelling time (HTTP timeout); not observable, so not labelled.
+- name: Jumeirah
+  url: https://www.jumeirah.com
+  sector: hospitality/travel
+  group: uae_travel_hospitality
+  observable: true
+  has_jsonld: true
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types:
+  - Organization
+  - PostalAddress
+  capabilities:
+  - list hotels
+  - get hotel details
+  - search availability
+  expected_band: Readable
+  notes: Organization + PostalAddress JSON-LD. Availability sits behind a booking engine, so the capability
+    is detected but not machine-reachable.
+- name: Atlantis The Palm
+  url: https://www.atlantis.com
+  sector: hospitality/travel
+  group: uae_travel_hospitality
+  observable: false
+  has_jsonld: null
+  has_llms_txt: null
+  has_openapi_spec: null
+  has_agent_manifest: null
+  has_ai_robots_stanza: null
+  jsonld_types: null
+  capabilities: null
+  expected_band: null
+  notes: Blocked automated access at labelling time (HTTP timeout); not observable, so not labelled.
+- name: Visit Dubai (DET)
+  url: https://www.visitdubai.com
+  sector: hospitality/travel
+  group: uae_travel_hospitality
+  observable: true
+  has_jsonld: false
+  has_llms_txt: true
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: true
+  jsonld_types: []
+  capabilities:
+  - search attractions
+  - get attraction details
+  - list events
+  - search hotels
+  expected_band: Readable
+  notes: Publishes an llms.txt and names AI crawlers — the most agent-aware government-linked site in
+    this set. No structured data on the homepage, which caps Axis 2.
+- name: DubiCars
+  url: https://www.dubicars.com
+  sector: automotive
+  group: uae_automotive
+  observable: true
+  has_jsonld: true
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types:
+  - Organization
+  - ContactPoint
+  - QuantitativeValue
+  - Country
+  - PostalAddress
+  - Person
+  - Place
+  capabilities:
+  - search cars
+  - get car listing
+  - list dealers
+  expected_band: Readable
+  notes: Listing IDs appear in URLs and Organization JSON-LD is present, but there is no documented API
+    and no llms.txt.
+- name: YallaMotor
+  url: https://uae.yallamotor.com
+  sector: automotive
+  group: uae_automotive
+  observable: true
+  has_jsonld: true
+  has_llms_txt: true
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: true
+  jsonld_types:
+  - WebSite
+  - SearchAction
+  - EntryPoint
+  - Organization
+  - ImageObject
+  - Review
+  - Rating
+  - Product
+  - Car
+  - Brand
+  - AggregateRating
+  - VideoObject
+  capabilities:
+  - search cars
+  - get car listing
+  - get car specifications
+  - list dealers
+  expected_band: Readable
+  notes: SearchAction in JSON-LD advertises a machine-usable search endpoint, and an llms.txt is published
+    — unusually strong Axis 1 for a regional classifieds site.
+- name: Arabian Automobiles
+  url: https://www.arabianautomobiles.com
+  sector: automotive
+  group: uae_automotive
+  observable: false
+  has_jsonld: null
+  has_llms_txt: null
+  has_openapi_spec: null
+  has_agent_manifest: null
+  has_ai_robots_stanza: null
+  jsonld_types: null
+  capabilities: null
+  expected_band: null
+  notes: Blocked automated access at labelling time (HTTP timeout); not observable, so not labelled.
+- name: DP World
+  url: https://www.dpworld.com
+  sector: logistics
+  group: uae_logistics_trade
+  observable: true
+  has_jsonld: true
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types:
+  - Organization
+  - ContactPoint
+  capabilities:
+  - search services
+  - get service details
+  - list ports
+  expected_band: Readable
+  notes: Organization JSON-LD. Cargo tracking exists but is JS-gated and unreachable without a browser,
+    which is the hypothesis this sector was chosen to test.
+- name: Aramex
+  url: https://www.aramex.com
+  sector: logistics
+  group: uae_logistics_trade
+  observable: false
+  has_jsonld: null
+  has_llms_txt: null
+  has_openapi_spec: null
+  has_agent_manifest: null
+  has_ai_robots_stanza: null
+  jsonld_types: null
+  capabilities: null
+  expected_band: null
+  notes: Blocked automated access at labelling time (HTTP 403); not observable, so not labelled.
+- name: Emirates Post
+  url: https://www.emiratespost.ae
+  sector: logistics
+  group: uae_logistics_trade
+  observable: true
+  has_jsonld: true
+  has_llms_txt: true
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: true
+  jsonld_types:
+  - GovernmentOrganization
+  - ItemList
+  - ListItem
+  - Service
+  - PostalAddress
+  - ContactPoint
+  capabilities:
+  - track shipment
+  - search services
+  - get service details
+  - list post offices
+  expected_band: Readable
+  notes: 'Strongest Axis 1 and 2 in the government group: llms.txt, an AI-agent stanza, and GovernmentOrganization/Service/ItemList
+    JSON-LD. Tracking is a genuine capability, though it is form-driven rather than documented.'
+- name: UAE Government Portal
+  url: https://u.ae
+  sector: government/public
+  group: uae_government_public
+  observable: true
+  has_jsonld: false
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types: []
+  capabilities:
+  - search services
+  - get service details
+  - list government entities
+  expected_band: Emerging
+  notes: No structured data, no llms.txt, no AI-agent stanza. Notable given the federal directive to move
+    half of government services to autonomous agents by 2028 — the portal that indexes those services
+    is not currently machine-readable.
+- name: MOHRE
+  url: https://www.mohre.gov.ae
+  sector: government/public
+  group: uae_government_public
+  observable: true
+  has_jsonld: false
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types: []
+  capabilities:
+  - search services
+  - get service details
+  expected_band: Emerging
+  notes: No structured data or agent-facing metadata observed on the public homepage.
+- name: Federal Tax Authority
+  url: https://tax.gov.ae
+  sector: government/public
+  group: uae_government_public
+  observable: true
+  has_jsonld: false
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types: []
+  capabilities:
+  - search services
+  - get service details
+  - list tax rates
+  expected_band: Emerging
+  notes: Substantial public guidance, none of it structured. Relevant to the e-invoicing rollout, where
+    machine-readable guidance would matter most.
+- name: Dubai Land Department
+  url: https://dubailand.gov.ae
+  sector: government/public
+  group: uae_government_public
+  observable: true
+  has_jsonld: false
+  has_llms_txt: false
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: true
+  jsonld_types: []
+  capabilities:
+  - search services
+  - get service details
+  - list transactions
+  expected_band: Emerging
+  notes: Names AI crawlers in robots.txt but publishes no structured data. DLD does release open transaction
+    data through Dubai Pulse — not linked from here in a machine-discoverable way.
+- name: Stripe
+  url: https://stripe.com
+  sector: SaaS/API-first
+  group: global_api_first_reference
+  observable: true
+  has_jsonld: true
+  has_llms_txt: true
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types:
+  - Organization
+  - Place
+  - PostalAddress
+  - ContactPoint
+  - ImageObject
+  - Person
+  - WebSite
+  capabilities:
+  - search documentation
+  - get api reference
+  - list products
+  - get pricing
+  expected_band: Agent-Ready
+  notes: Public OpenAPI spec exists but is published on GitHub, not at a conventional path — Wasl probes
+    /openapi.json and /swagger.json only, so it will miss this and lose 6 points on Axis 3. A real recall
+    gap in the prober, not a gap in the site.
+- name: Twilio
+  url: https://www.twilio.com
+  sector: SaaS/API-first
+  group: global_api_first_reference
+  observable: true
+  has_jsonld: true
+  has_llms_txt: true
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types:
+  - Organization
+  - WebSite
+  - SearchAction
+  capabilities:
+  - search documentation
+  - get api reference
+  - list products
+  - get pricing
+  expected_band: Agent-Ready
+  notes: OpenAPI spec published on GitHub rather than at a conventional path. Same prober limitation as
+    Stripe.
+- name: GitHub
+  url: https://github.com
+  sector: SaaS/API-first
+  group: global_api_first_reference
+  observable: true
+  has_jsonld: false
+  has_llms_txt: true
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types: []
+  capabilities:
+  - search repositories
+  - get repository
+  - search documentation
+  - get api reference
+  expected_band: Agent-Ready
+  notes: No JSON-LD on the marketing homepage, which understates a site whose entire product is a documented
+    API. OpenAPI spec lives in github/rest-api-description.
+- name: Shopify
+  url: https://www.shopify.com
+  sector: SaaS/API-first
+  group: global_api_first_reference
+  observable: true
+  has_jsonld: true
+  has_llms_txt: true
+  has_openapi_spec: false
+  has_agent_manifest: false
+  has_ai_robots_stanza: false
+  jsonld_types:
+  - Corporation
+  - ContactPoint
+  capabilities:
+  - search documentation
+  - get api reference
+  - list pricing plans
+  expected_band: Agent-Ready
+  notes: GraphQL and REST admin APIs are documented; neither is discoverable at a conventional spec path.

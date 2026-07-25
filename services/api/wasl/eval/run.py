@@ -249,15 +249,41 @@ async def build_report(*, router: ModelRouter | None = None) -> EvalReport:
             )
         )
 
-    # --- tuning --------------------------------------------------------------
-    for key in ("capability_precision", "capability_recall", "band_accuracy_exact", "band_accuracy_within_1"):
-        report.results.append(
-            MetricResult(
-                BY_KEY[key],
-                None,
-                blocked_reason=blocked_reason
-                or f"only {labelled}/{total_labels} golden sites are labelled",
+    # --- tuning: the label-dependent three ------------------------------------
+    from wasl.eval.golden import compute_metrics as golden_metrics
+
+    golden = golden_metrics()
+    key_map = {
+        "capability_precision": "judge_labelled_capability_precision",
+        "capability_recall": "judge_labelled_capability_recall",
+        "band_accuracy_exact": "judge_labelled_band_accuracy_exact",
+        "band_accuracy_within_1": "judge_labelled_band_accuracy_within_1",
+    }
+
+    for source_key, metric_key in key_map.items():
+        if not golden.get("available"):
+            report.results.append(
+                MetricResult(BY_KEY[metric_key], None, blocked_reason=golden.get("reason", blocked_reason))
             )
+            continue
+
+        detail = f"{golden['sites_compared']} of 30 golden sites compared"
+        if source_key.startswith("band"):
+            detail = f"{golden['band_scored']} sites with a comparable band"
+        report.results.append(MetricResult(BY_KEY[metric_key], golden.get(source_key), detail=detail))
+
+    if golden.get("available") and golden.get("circular"):
+        report.notes.append(
+            "The three label-dependent metrics are marked with an asterisk and named "
+            "judge_labelled_*. seeds/golden/labels.yaml declares label_source: model, so "
+            "they measure agreement with the labelling model rather than correctness. "
+            "The four boolean label fields are independent observations and are not affected."
+        )
+    if golden.get("available"):
+        report.notes.append(
+            f"Band accuracy is computed over {golden['band_scored']} sites, not 30: eight of "
+            "the golden set blocked automated access at labelling time and were left "
+            "deliberately unlabelled rather than guessed."
         )
 
     recall, missed = _injection_recall()
