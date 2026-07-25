@@ -29,17 +29,23 @@ function StartScan(): React.ReactElement {
 
   const url = params.get("url");
   const fixture = params.get("fixture");
+  // An unchecked checkbox submits nothing at all, so absence is the "no".
+  const acknowledged = params.get("ack") === "1";
 
   useEffect(() => {
     if (!url && !fixture) return;
     setBusy(true);
-    startScan(url ? { url } : { fixture: fixture ?? undefined })
+    startScan(
+      url
+        ? { url, acknowledge_generation: acknowledged }
+        : { fixture: fixture ?? undefined },
+    )
       .then((job) => router.replace(`/scan/${job.job_id}`))
       .catch((exc) => {
         setError(exc instanceof Error ? exc.message : "Could not start the scan.");
         setBusy(false);
       });
-  }, [url, fixture, router]);
+  }, [url, fixture, acknowledged, router]);
 
   if (busy) {
     return (

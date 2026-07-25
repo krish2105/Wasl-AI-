@@ -67,22 +67,53 @@ export default function Home(): React.ReactElement {
         <h2 id="scan" className="eyebrow">
           Scan a site
         </h2>
-        <form className="mt-5 flex flex-col gap-3 sm:flex-row" action="/scan" method="get">
-          <label htmlFor="url" className="sr-only">
-            Site URL
-          </label>
-          <input
-            id="url"
-            name="url"
-            type="url"
-            required
-            placeholder="https://example.ae"
-            className="input flex-1"
-          />
-          <button type="submit" className="btn btn-primary justify-center">
-            Measure
-            <ArrowRightIcon size={15} />
-          </button>
+        <form className="mt-5" action="/scan" method="get">
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <label htmlFor="url" className="sr-only">
+              Site URL
+            </label>
+            <input
+              id="url"
+              name="url"
+              type="url"
+              required
+              placeholder="https://example.ae"
+              className="input flex-1"
+            />
+            <button type="submit" className="btn btn-primary justify-center">
+              Measure
+              <ArrowRightIcon size={15} />
+            </button>
+          </div>
+
+          {/*
+            Deliberately unticked by default and deliberately not `required`.
+            Scanning somebody else's site is fine; generating an MCP server that
+            purports to describe their business is the part that needs a person
+            behind it. Leaving it unticked is a legitimate choice — the scan runs
+            and stops at the gate — so pre-ticking it would be answering the
+            question on the user's behalf.
+          */}
+          <div className="mt-4 flex items-start gap-3">
+            <input
+              id="ack"
+              name="ack"
+              type="checkbox"
+              value="1"
+              className="mt-1 shrink-0"
+              style={{ accentColor: "var(--signal)", width: 15, height: 15 }}
+              aria-describedby="ack-note"
+            />
+            <label htmlFor="ack" className="mono" style={{ color: "var(--text-dim)" }}>
+              I understand the generated MCP server, Agent Card and{" "}
+              <span style={{ whiteSpace: "nowrap" }}>llms.txt</span> are illustrative and
+              unsigned. They are not published by this business and do not speak for it.
+            </label>
+          </div>
+          <p id="ack-note" className="mono mt-2" style={{ color: "var(--text-faint)" }}>
+            Leave it unticked and the scan still runs. It stops before writing any
+            artifacts and asks again.
+          </p>
         </form>
         <p className="mono mt-3" style={{ color: "var(--text-faint)" }}>
           Read-only · 0.5 req/s · robots-respecting ·{" "}

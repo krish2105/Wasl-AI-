@@ -130,7 +130,9 @@ export type ScanEvent = {
   at: string;
 };
 
+/** Mirrors NODE_SEQUENCE in wasl/graph/events.py. Keep the two in step. */
 export const NODES: Array<{ id: string; label: string }> = [
+  { id: "gate_precrawl", label: "Checking crawl permission" },
   { id: "crawl", label: "Fetching pages" },
   { id: "extract", label: "Extracting evidence" },
   { id: "induce", label: "Inducing capabilities" },
@@ -158,7 +160,12 @@ export const RULE_LABEL: Record<string, string> = {
   injection_detected: "cited evidence contains injected instructions",
 };
 
-export function startScan(body: { url?: string; fixture?: string }) {
+export function startScan(body: {
+  url?: string;
+  fixture?: string;
+  /** Clears gate_pregenerate. Without it the backend pauses before writing artifacts. */
+  acknowledge_generation?: boolean;
+}) {
   return apiFetch(
     "/api/scan",
     z.object({ job_id: z.string(), source: z.string(), target: z.string() }),
