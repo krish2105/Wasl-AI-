@@ -410,7 +410,11 @@ class LeaderboardEntry(Base):
 
     domain: Mapped[str] = mapped_column(String(253), nullable=False, unique=True)
     display_name: Mapped[str] = mapped_column(String(128), nullable=False)
-    anonymised_id: Mapped[str | None] = mapped_column(String(16))
+    # 64, not 16. The published label is the whole string — "UAE Federal Portal
+    # (GOV-14)" is 27 characters — and it is what the API contract returns in
+    # place of the real name. Truncating it would publish a different identifier
+    # than the one the contract specifies, so the column has to hold all of it.
+    anonymised_id: Mapped[str | None] = mapped_column(String(64))
     is_anonymised: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     group_key: Mapped[str] = mapped_column(String(48), nullable=False, index=True)
@@ -419,6 +423,11 @@ class LeaderboardEntry(Base):
 
     job_id: Mapped[str | None] = mapped_column(ForeignKey("jobs.id", ondelete="SET NULL"))
     total: Mapped[int | None] = mapped_column(Integer)
+    # Stored alongside the total because it varies. A suppressed check leaves the
+    # denominator as well as the numerator, so the golden run alone produced five
+    # different maxima (81, 89, 90, 94, 97). Ranking on `total` would put 14/81
+    # level with 14/97, which is not a ranking, it is an artefact.
+    max_possible: Mapped[int | None] = mapped_column(Integer)
     band: Mapped[str | None] = mapped_column(String(16))
     confidence: Mapped[str | None] = mapped_column(String(8))
 

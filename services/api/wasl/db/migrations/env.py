@@ -22,6 +22,29 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
+# Tables LangGraph's Postgres checkpointer creates and owns via its own setup().
+# They live in our database but not in our metadata, so autogenerate sees them as
+# orphans and proposes DROP. Running that migration would delete every in-flight
+# scan's resume state. Their schema belongs to a third party and its own
+# migrations maintain it; ours must not touch them.
+_FOREIGN_TABLES = frozenset(
+    {
+        "checkpoints",
+        "checkpoint_blobs",
+        "checkpoint_writes",
+        "checkpoint_migrations",
+    }
+)
+
+
+def include_name(name: str | None, type_: str, parent_names: dict) -> bool:
+    """Hide the checkpointer's tables from autogenerate and `alembic check`."""
+    if type_ == "table":
+        return name not in _FOREIGN_TABLES
+    if type_ == "index" and parent_names.get("table_name") in _FOREIGN_TABLES:
+        return False
+    return True
+
 
 def _sync_url() -> str:
     url = load_settings().database_url
@@ -39,6 +62,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        include_name=include_name,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -55,6 +79,7 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
+            include_name=include_name,
         )
         with context.begin_transaction():
             context.run_migrations()
