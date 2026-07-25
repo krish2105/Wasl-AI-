@@ -116,6 +116,11 @@
   --rule-strong: 1px solid var(--border-strong);
   --measure: 68ch;
 
+  /* Height of the sticky header. SiteNav pins its min-height to this and the
+     scroll-padding below is derived from it, so a change to one cannot leave
+     anchored sections hidden underneath the other. */
+  --header-h: 3.8125rem;
+
   --font-display: var(--font-archivo), "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-body: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -289,6 +294,18 @@ body {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+
+/* Anchored targets must clear the sticky header.
+
+   Without this, /#scan scrolls the section to y=0 where the header is already
+   painted, so the heading and the first form control sit underneath it. It is
+   set as scroll-padding on the scroll container rather than scroll-margin on
+   each target, so it covers every anchor including the skip link's #main and
+   anything added later, in one declaration. */
+html {
+  scroll-padding-top: calc(var(--header-h) + 1.5rem);
 }
 
 @media (prefers-reduced-motion: reduce) {

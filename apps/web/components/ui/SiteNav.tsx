@@ -27,6 +27,9 @@ export function SiteNav(): React.ReactElement {
     <header
       className="sticky top-0 z-40"
       style={{
+        // Pinned so the header and the scroll-padding derived from it in
+        // globals.css cannot drift apart. Matches the natural height.
+        minHeight: "var(--header-h)",
         borderBottom: "1px solid var(--border)",
         background: "color-mix(in srgb, var(--surface) 82%, transparent)",
         backdropFilter: "blur(10px)",
