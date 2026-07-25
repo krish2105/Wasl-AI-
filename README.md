@@ -13,7 +13,13 @@
 [![Next.js](https://img.shields.io/badge/next.js-14-1c6f9e)](apps/web)
 [![licence](https://img.shields.io/badge/licence-MIT-7d8994)](LICENSE)
 
+**[Live site](https://wasl-ai-eight.vercel.app)** · **[Crawler policy](https://wasl-ai-eight.vercel.app/crawler)**
+
 *Wasl (وصل) — Arabic for connection.*
+
+<sub>The deployed site is the interface only. The scan pipeline needs headless Chromium, Postgres,
+Redis and long-lived SSE — the wrong shape for a serverless host — so it runs locally. Everything
+works offline against saved fixtures with no API key of any kind.</sub>
 
 </div>
 

@@ -20,6 +20,6 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "Google-Extended", allow: "/" },
       { userAgent: "CCBot", allow: "/" },
     ],
-    sitemap: "https://wasl-ai.vercel.app/sitemap.xml",
+    sitemap: "https://wasl-ai-eight.vercel.app/sitemap.xml",
   };
 }

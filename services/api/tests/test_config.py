@@ -90,3 +90,23 @@ def test_settings_are_immutable() -> None:
     settings = Settings(**BASE)
     with pytest.raises(ValueError):
         settings.env = "production"  # type: ignore[misc]
+
+
+def test_opt_out_contact_accepts_an_https_url() -> None:
+    """A monitored issue tracker is a real opt-out channel.
+
+    The requirement is somewhere a site operator can reach that a human reads,
+    not specifically SMTP — and the published crawler page offers exactly this,
+    so the config must not disagree with it.
+    """
+    settings = Settings(
+        **BASE,
+        crawler_info_url="https://example.com/crawler",
+        opt_out_email="https://github.com/owner/repo/issues",
+    )
+    assert settings.require_crawler_identity()[1].startswith("https://")
+
+
+def test_opt_out_contact_rejects_a_value_that_is_neither() -> None:
+    with pytest.raises(ValueError, match="email address or an https URL"):
+        Settings(**BASE, opt_out_email="ask me on linkedin")

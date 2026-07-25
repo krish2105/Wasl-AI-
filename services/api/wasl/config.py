@@ -105,6 +105,27 @@ class Settings(BaseModel):
             )
         return v
 
+    @field_validator("opt_out_email")
+    @classmethod
+    def _validate_opt_out_contact(cls, v: str) -> str:
+        """Accepts an email address OR an https URL.
+
+        The requirement is a channel a site operator can reach and that someone
+        actually reads — not specifically SMTP. A public issue tracker satisfies
+        that, and demanding an email while the published crawler page offers a
+        GitHub issue would make the two disagree about how to opt out.
+        """
+        if not v:
+            return v
+        if v.startswith("https://"):
+            return v
+        if "@" in v and "." in v.split("@")[-1]:
+            return v
+        raise ValueError(
+            "WASL_OPT_OUT_EMAIL must be an email address or an https URL to a "
+            f"monitored channel (an issue tracker counts). Got {v!r}."
+        )
+
     # --- derived paths -------------------------------------------------------
 
     @property
@@ -144,8 +165,9 @@ class Settings(BaseModel):
         if missing:
             raise ConfigurationError(
                 f"Refusing to crawl: {' and '.join(missing)} not set. The crawler's "
-                "User-Agent must point at a live page explaining what it does and a "
-                "mailbox that accepts opt-out requests. Set both in .env."
+                "User-Agent must point at a live page explaining what it does, and an "
+                "opt-out channel someone reads — an email address or an https URL to a "
+                "monitored issue tracker. Set both in .env."
             )
         return self.crawler_info_url, self.opt_out_email
 

@@ -6,7 +6,7 @@ import type { MetadataRoute } from "next";
  * exactly the sitemap failure Axis 1 penalises other sites for.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://wasl-ai.vercel.app";
+  const base = "https://wasl-ai-eight.vercel.app";
   const lastModified = new Date();
 
   return [

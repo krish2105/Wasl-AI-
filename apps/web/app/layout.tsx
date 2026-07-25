@@ -36,7 +36,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://wasl-ai.vercel.app"),
+  metadataBase: new URL("https://wasl-ai-eight.vercel.app"),
   title: {
     default: "Wasl AI — agent-readiness index",
     template: "%s — Wasl AI",

@@ -16,8 +16,16 @@ export const metadata: Metadata = {
     "What the WaslAI-Research crawler fetches, how often, and how to opt out. Read-only, robots-respecting, 0.5 requests per second.",
 };
 
-const OPT_OUT_EMAIL =
-  process.env.NEXT_PUBLIC_OPT_OUT_EMAIL ?? "opt-out@wasl-ai.example";
+/**
+ * Falls back to a real GitHub issues URL rather than a placeholder address.
+ *
+ * This page exists so a site operator can make the crawler stop. Printing
+ * `opt-out@wasl-ai.example` would give them a channel that silently discards
+ * their request — worse than offering none, because it looks like one. The
+ * issues tracker is public, monitored and actually works.
+ */
+const OPT_OUT_EMAIL = process.env.NEXT_PUBLIC_OPT_OUT_EMAIL || null;
+const OPT_OUT_ISSUES = "https://github.com/krish2105/Wasl-AI-/issues/new?title=Crawler%20opt-out";
 
 const facts: Array<{ label: string; value: string; note: string }> = [
   { label: "method", value: "GET only", note: "No POST, PUT, PATCH or DELETE. Ever." },
@@ -61,17 +69,35 @@ export default function CrawlerPolicy(): React.ReactElement {
           Opt out
         </h2>
         <p className="mt-3" style={{ maxWidth: "var(--measure)" }}>
-          Email{" "}
-          <a
-            href={`mailto:${OPT_OUT_EMAIL}?subject=Wasl%20AI%20crawler%20opt-out`}
-            className="mono underline"
-            style={{ color: "var(--paper)" }}
-          >
-            {OPT_OUT_EMAIL}
-          </a>{" "}
-          with your domain. Removal is applied within 24 hours, is permanent, and also
-          removes any published score. You do not need to give a reason and we will not
-          ask for one.
+          {OPT_OUT_EMAIL ? (
+            <>
+              Email{" "}
+              <a
+                href={`mailto:${OPT_OUT_EMAIL}?subject=Wasl%20AI%20crawler%20opt-out`}
+                className="mono underline"
+                style={{ color: "var(--text)" }}
+              >
+                {OPT_OUT_EMAIL}
+              </a>{" "}
+              with your domain.
+            </>
+          ) : (
+            <>
+              <a
+                href={OPT_OUT_ISSUES}
+                className="mono underline"
+                style={{ color: "var(--text)" }}
+                target="_blank"
+                rel="noreferrer noopener"
+              >
+                Open an issue
+              </a>{" "}
+              with your domain. A dedicated opt-out mailbox is not live yet, and printing
+              an address that discards your request would be worse than printing none.
+            </>
+          )}{" "}
+          Removal is applied within 24 hours, is permanent, and also removes any published
+          score. You do not need to give a reason and we will not ask for one.
         </p>
         <p className="mt-4 text-sm" style={{ color: "var(--paper-dim)" }}>
           Or block us in <code className="mono">robots.txt</code> — honoured on the next
