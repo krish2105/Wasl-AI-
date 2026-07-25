@@ -6,7 +6,7 @@
 
 **Scores whether a business is legible to AI agents, then generates the MCP server that makes it legible.**
 
-[![tests](https://img.shields.io/badge/tests-414%20passing-4a7c3f)](#verification)
+[![tests](https://img.shields.io/badge/tests-427%20passing-4a7c3f)](#verification)
 [![hallucination rate](https://img.shields.io/badge/hallucinated%20capabilities-0.00-4a7c3f)](#evaluation)
 [![cost per scan](https://img.shields.io/badge/cost%20per%20scan-%240.00-4a7c3f)](#zero-paid-api-keys)
 [![Python](https://img.shields.io/badge/python-3.11-1c6f9e)](services/api)
@@ -45,7 +45,7 @@ evidence in the site's markup.
 > **Deterministic logic is code. Language models do retrieval, decomposition and explanation only.**
 
 The model never emits a score. Scoring is a pure function over extracted evidence, living in a
-package that **cannot import the model layer** — and that is verified three ways in CI, not asserted
+package that **cannot import the model layer** — and that is verified three ways by the test suite, not asserted
 in a README:
 
 | Check | How |
@@ -104,7 +104,7 @@ Metrics are split into three classes and treated differently. **A gate at 0.98 i
 a tuning metric at 0.73 against a 0.70 target is a good day.** Conflating them is the most common
 evaluation mistake there is. A `BLOCKED` gate is explicitly *not* a passing gate.
 
-`uv run python -m wasl.eval.run` exits non-zero if any gate fails, so it belongs in CI.
+`uv run python -m wasl.eval.run` exits non-zero if any gate fails, so it is ready to be a CI gate; no CI workflow is committed yet.
 
 ---
 
@@ -242,7 +242,7 @@ Full policy: [`docs/crawler-policy.md`](docs/crawler-policy.md) · the live page
 
 Crawled content is adversarial input, and Wasl's output is a public score — which gives an attacker
 a concrete motive. Every byte reaching a model goes through **one chokepoint**, with a per-call nonce
-so a page cannot forge the closing delimiter. A CI test walks the AST for `.complete()` call sites
+so a page cannot forge the closing delimiter. A test walks the AST for `.complete()` call sites
 and fails any module that issues one without importing the wrapper.
 
 Wrapping is the mitigation; the scanner is the **measurement**. Injection-detection recall is a
@@ -324,14 +324,14 @@ wasl-ai/
 └── scripts/                     verify_seeds · fetch_reference_corpora
 ```
 
-~13k lines of Python, ~2.8k of TypeScript, **414 tests**.
+~13k lines of Python, ~2.8k of TypeScript, **427 tests**.
 
 ---
 
 ## Verification
 
 ```bash
-cd services/api && uv run pytest          # 414 passed
+cd services/api && uv run pytest          # 427 passed
 uv run alembic check                      # no model/schema drift
 uv run python -m wasl.eval.run            # exits non-zero on any gate failure
 cd apps/web && pnpm typecheck && pnpm build
@@ -361,7 +361,7 @@ and is not yet done.
 sites. Never wrong by more than one band is a meaningfully different failure shape from randomly
 wrong, and the four SaaS misses above account for most of the exact-match gap.
 
-**Latency p95 is 117.6s against a 90s target.** The demo node's claim verification added model
+**Latency p95 is 103.3s against a 90s target.** The demo node's claim verification added model
 calls, and on the offline tier each one is slow. A hosted free-tier key would bring this under
 target without changing anything else.
 
