@@ -85,9 +85,24 @@ export function LiveScan({
     source.onerror = () => {
       // EventSource retries on its own; only surface a hard failure once the
       // stream is closed for good.
-      if (source.readyState === EventSource.CLOSED) {
-        setFailure((f) => f ?? "The event stream closed unexpectedly.");
-      }
+      if (source.readyState !== EventSource.CLOSED) return;
+
+      // Distinguish "this job is gone" from "the connection dropped". Jobs live
+      // in memory, so an API restart makes every earlier link 404 — telling a
+      // user their stream broke when the job simply no longer exists sends them
+      // debugging the wrong thing.
+      fetch(eventsUrl(jobId))
+        .then((response) => {
+          setFailure((f) =>
+            f ??
+            (response.status === 404
+              ? `Job ${jobId} no longer exists. Scans are held in memory, so they do not survive an API restart — start a new one.`
+              : "The event stream closed before the scan finished."),
+          );
+        })
+        .catch(() =>
+          setFailure((f) => f ?? "Could not reach the API. Is it running on the configured port?"),
+        );
     };
 
     return () => source.close();
