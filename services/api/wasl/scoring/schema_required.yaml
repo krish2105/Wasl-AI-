@@ -1,0 +1,121 @@
+# Required properties per schema.org type — an OPERATIONAL DEFINITION.
+#
+# ---------------------------------------------------------------------------
+# READ THIS BEFORE CHANGING ANYTHING HERE.
+#
+# schema.org does not define required properties. It defines `domainIncludes`
+# and `rangeIncludes`, which say where a property *may* appear and what it *may*
+# contain — never that anything must be present. Every vocabulary term is
+# optional by design.
+#
+# So the rubric's Axis 2 check, "validates against schema.org vocabulary with
+# zero required-property violations", is not a question the vocabulary can
+# answer. Taken literally it is unfalsifiable: every well-formed JSON-LD
+# document trivially passes.
+#
+# This file is our answer to it, and it is a judgement call rather than an
+# inherited standard. It is stated here so a reviewer can disagree with the
+# specific choices without having to reverse-engineer them from code.
+#
+# THE DEFINITION: a property is "required" for a type when its absence makes the
+# entity unusable to an agent trying to act on it. A Product with no name cannot
+# be referred to. An Offer with a price but no currency is a number, not a price.
+# A LocalBusiness with no address cannot be visited.
+#
+# Sourced from Google's structured-data requirements for rich results, which is
+# the closest thing to a de-facto standard, narrowed to properties that matter
+# for machine consumption rather than search presentation. Where Google requires
+# something purely for display (an image for a rich card, say), it is listed as
+# recommended rather than required.
+#
+# The README states plainly that "required" here is Wasl's definition. Anyone
+# scoring differently will get different numbers, and that is fine as long as the
+# definition is visible.
+# ---------------------------------------------------------------------------
+
+version: 1
+updated: 2026-07-25
+basis: >
+  Google structured-data requirements for rich results, narrowed to properties
+  whose absence prevents an agent from identifying, locating or transacting
+  against the entity. Not a schema.org standard — schema.org has none.
+
+types:
+  Organization:
+    required: [name]
+    recommended: [url, logo, address, sameAs, contactPoint]
+    why: >
+      A name is the minimum needed to refer to the entity at all. url and address
+      are what make it locatable, but plenty of valid Organization nodes describe
+      a parent company that has neither.
+
+  LocalBusiness:
+    required: [name, address]
+    recommended: [telephone, openingHoursSpecification, geo, url, priceRange]
+    why: >
+      A local business without an address is not local. This is stricter than
+      Organization deliberately — the type asserts physical presence.
+
+  Product:
+    required: [name]
+    recommended: [sku, offers, image, description, brand, gtin13, aggregateRating]
+    why: >
+      name alone is required because a Product node legitimately appears without
+      an offer — catalogue entries, discontinued lines. sku and offers are what
+      make it transactable, and they are scored separately on Axis 5.
+
+  Offer:
+    required: [price, priceCurrency]
+    recommended: [availability, url, priceValidUntil, itemCondition]
+    why: >
+      A price without a currency is the single most common real-world violation
+      and is genuinely ambiguous: "1,200" is meaningless across AED, USD and INR.
+
+  Service:
+    required: [name]
+    recommended: [provider, areaServed, offers, serviceType]
+
+  Event:
+    required: [name, startDate]
+    recommended: [location, endDate, offers, eventStatus, eventAttendanceMode]
+    why: >
+      An event without a start date cannot be planned around, which is the only
+      reason an agent would read one.
+
+  FAQPage:
+    required: [mainEntity]
+    recommended: []
+    why: >
+      An FAQPage with no questions is an empty assertion. Each mainEntity should
+      be a Question with an acceptedAnswer; that nesting is checked structurally.
+
+  Question:
+    required: [name, acceptedAnswer]
+    recommended: [answerCount]
+
+  OpeningHoursSpecification:
+    required: [dayOfWeek]
+    recommended: [opens, closes, validFrom, validThrough]
+    why: >
+      opens/closes are absent on legitimate all-day or closed-day specifications,
+      so requiring them would penalise correct markup.
+
+  PostalAddress:
+    required: [addressLocality]
+    recommended: [streetAddress, addressCountry, postalCode, addressRegion]
+    why: >
+      Much of the UAE has no postal code system in common use, and requiring one
+      would systematically penalise correctly-marked-up Emirati addresses. This
+      is exactly the kind of assumption a rubric written for one market smuggles
+      in without noticing.
+
+  BreadcrumbList:
+    required: [itemListElement]
+    recommended: []
+
+  WebSite:
+    required: [url]
+    recommended: [name, potentialAction]
+    why: >
+      potentialAction with a SearchAction is how a site advertises a machine-
+      usable search endpoint — a genuine capability signal, credited on Axis 3.

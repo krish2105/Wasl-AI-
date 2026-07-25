@@ -31,6 +31,7 @@ SiteDetector = Callable[[SiteArtifacts], list[Evidence]]
 
 from wasl.crawler.detectors import (  # noqa: E402  (registry needs the symbols)
     forms,
+    governance,
     headers,
     identifiers,
     injection,
@@ -39,6 +40,7 @@ from wasl.crawler.detectors import (  # noqa: E402  (registry needs the symbols)
     media,
     openapi,
     pagination,
+    pricing,
     rendering,
     robots_txt,
     semantics,
@@ -55,6 +57,8 @@ PAGE_DETECTORS: tuple[tuple[str, PageDetector], ...] = (
     ("headers", headers.detect),
     ("pagination", pagination.detect),
     ("media", media.detect),
+    ("pricing", pricing.detect),
+    ("governance", governance.detect),
     ("openapi_links", openapi.detect_page_links),
     ("injection", injection.detect),
 )

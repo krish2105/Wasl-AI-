@@ -146,6 +146,23 @@ def detect(page: CapturedPage) -> list[Evidence]:
                 phase=markup_hit[0] if markup_hit else "pre_js",
             )
         )
+    else:
+        # "We checked and found no gate" needs a receipt just as much as finding
+        # one does. Without this row, Axis 5 would award three points for an
+        # absence it could not point at — and a score with no citation behind it
+        # is the exact thing the critic node exists to reject elsewhere.
+        evidence.append(
+            Evidence(
+                source_url=page.final_url,
+                kind="header",
+                selector="header#no-interstitial",
+                raw=(
+                    f"Checked for CAPTCHA, bot-challenge and interstitial markers "
+                    f"(status {page.status_code}, headers and markup): none found."
+                ),
+                phase="pre_js",
+            )
+        )
 
     # --- the raw response line, always kept ----------------------------------
     interesting = {
