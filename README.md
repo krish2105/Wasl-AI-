@@ -270,6 +270,16 @@ uv run uvicorn wasl.main:app --reload    # :8000
 cd apps/web && pnpm install && pnpm dev   # :3000
 ```
 
+Or run the backend as a container — the build context is the **repo root**, since
+the image needs `seeds/` as well:
+
+```bash
+docker build -f services/api/Dockerfile -t wasl-api .
+```
+
+Deploying it needs 2 GB of RAM and a persistent volume for the crawl cache. Fly.io
+and Render configs, plus the reasoning, are in [`docs/deployment.md`](docs/deployment.md).
+
 Traces are optional and heavy — bring Langfuse up only when you want them:
 
 ```bash
