@@ -200,6 +200,7 @@ class ModelRouter:
         temperature: float = 0.0,
         max_tokens: int = 2048,
         json_mode: bool = True,
+        json_schema: dict[str, Any] | None = None,
     ) -> tuple[str, ModelSpec]:
         """Run a completion, walking the chain on failure. Returns (text, model used)."""
         chain = self.available(role)
@@ -222,6 +223,7 @@ class ModelRouter:
                     temperature=temperature,
                     max_tokens=max_tokens,
                     json_mode=json_mode,
+                    json_schema=json_schema,
                 )
                 return text, spec
             except Exception as exc:
@@ -252,6 +254,7 @@ class ModelRouter:
         temperature: float,
         max_tokens: int,
         json_mode: bool,
+        json_schema: dict[str, Any] | None = None,
     ) -> str:
         import litellm
 
@@ -269,7 +272,18 @@ class ModelRouter:
             kwargs["api_key"] = key
         if spec.provider == "ollama":
             kwargs["api_base"] = self._settings.ollama_base_url
-        if json_mode and spec.provider in {"groq", "google", "ollama"}:
+        if json_schema is not None:
+            # Ollama takes a bare JSON schema in `format`; the OpenAI-compatible
+            # providers take it wrapped in response_format. Shape-constrained
+            # output is what makes the 7B offline tier usable at all.
+            if spec.provider == "ollama":
+                kwargs["format"] = json_schema
+            else:
+                kwargs["response_format"] = {
+                    "type": "json_schema",
+                    "json_schema": {"name": "response", "schema": json_schema, "strict": False},
+                }
+        elif json_mode and spec.provider in {"groq", "google", "ollama"}:
             kwargs["response_format"] = {"type": "json_object"}
 
         with model_span(

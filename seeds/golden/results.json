@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Amazon.ae",
+    "url": "https://www.amazon.ae",
+    "seconds": 21.8,
+    "pages_ok": 1,
+    "pages_robots_blocked": 0,
+    "evidence": 42,
+    "total": 14,
+    "max_possible": 81,
+    "percentage": 17.3,
+    "band": null,
+    "confidence": "low",
+    "predicted_capabilities": [],
+    "rejections": 0,
+    "error": null
+  },
+  {
+    "name": "Ounass",
+    "url": "https://www.ounass.ae",
+    "seconds": 168.3,
+    "pages_ok": 8,
+    "pages_robots_blocked": 4,
+    "evidence": 152,
+    "total": 39,
+    "max_possible": 97,
+    "percentage": 40.2,
+    "band": null,
+    "confidence": "low",
+    "predicted_capabilities": [
+      "find prices"
+    ],
+    "rejections": 1,
+    "error": null
+  },
+  {
+    "name": "Sharaf DG",
+    "url": "https://uae.sharafdg.com",
+    "seconds": 155.4,
+    "pages_ok": 12,
+    "pages_robots_blocked": 0,
+    "evidence": 243,
+    "total": 43,
+    "max_possible": 97,
+    "percentage": 44.3,
+    "band": "Emerging",
+    "confidence": "high",
+    "predicted_capabilities": [],
+    "rejections": 1,
+    "error": null
+  }
+]

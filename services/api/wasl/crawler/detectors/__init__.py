@@ -74,6 +74,27 @@ SITE_DETECTORS: tuple[tuple[str, SiteDetector], ...] = (
 
 def run_page_detectors(page: CapturedPage) -> list[Evidence]:
     """Run every page detector. One failing detector must not lose the others."""
+    from wasl.crawler.policy import MAX_PARSEABLE_BYTES
+
+    largest = max(len(page.pre_js_html), len(page.post_js_html))
+    if largest > MAX_PARSEABLE_BYTES:
+        # Recorded rather than silently skipped: "we declined to parse this"
+        # is a fact about the crawl that belongs in the evidence trail.
+        return [
+            Evidence(
+                source_url=page.final_url,
+                kind="text",
+                selector="page#too-large",
+                raw=(
+                    f"Document is {largest / 1e6:.1f} MB, above the "
+                    f"{MAX_PARSEABLE_BYTES / 1e6:.0f} MB parse limit. Detectors were not "
+                    "run: a document this size is a feed or a dump rather than content, "
+                    "and parsing it costs minutes for no evidence."
+                ),
+                phase="pre_js",
+            )
+        ]
+
     collected: list[Evidence] = []
     for name, detector in PAGE_DETECTORS:
         try:

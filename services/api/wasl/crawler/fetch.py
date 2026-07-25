@@ -56,6 +56,12 @@ from wasl.crawler.types import (
 
 logger = logging.getLogger(__name__)
 
+
+def _looks_like_sitemap(url: str) -> bool:
+    """True for sitemap files, which are site artifacts rather than content pages."""
+    path = urlparse(url).path.lower()
+    return path.endswith((".xml", ".xml.gz")) or "sitemap" in path
+
 # Resource types never worth downloading. We score markup.
 _BLOCKED_RESOURCE_TYPES = {"image", "font", "media"}
 
@@ -379,6 +385,13 @@ class Crawler:
             if not self._same_site(url, root_url):
                 return
             if not self._policy.check_url(url).allowed:
+                return
+            # Sitemaps are fetched deliberately as site artifacts; they must never
+            # ALSO be crawled as content pages. A sitemap index lists child
+            # sitemaps, so without this the crawler spends its page budget parsing
+            # XML — and Ounass ships a 50 MB products sitemap that costs ~13
+            # seconds in the injection scanner alone, per detector pass.
+            if _looks_like_sitemap(url):
                 return
             candidates.append(url)
 

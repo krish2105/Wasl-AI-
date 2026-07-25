@@ -16,6 +16,7 @@ import re
 from wasl.graph.state import Capability, ToolSchema, WaslState
 from wasl.llm.prompts.registry import load as load_prompt
 from wasl.llm.router import ModelRouter, Role
+from wasl.llm.schemas import SYNTHESIZE_SCHEMA
 from wasl.llm.untrusted import build_prompt, wrap_evidence_batch
 from wasl.obs.tracing import node_span
 
@@ -87,6 +88,7 @@ async def synthesize(
                     prompt_name=prompt_file.id,
                     prompt_sha=prompt_file.sha,
                     max_tokens=1200,
+                    json_schema=SYNTHESIZE_SCHEMA,
                 )
             except Exception as exc:
                 errors.append(f"synthesize {capability.name!r}: {type(exc).__name__}: {exc}")

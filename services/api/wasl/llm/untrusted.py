@@ -125,15 +125,21 @@ def wrap_evidence_batch(evidence: list[Evidence], *, max_items: int | None = Non
     )
 
 
-def build_prompt(instruction: str, wrapped: WrappedContent) -> str:
+def build_prompt(
+    instruction: str, wrapped: WrappedContent, *, reminder: str | None = None
+) -> str:
     """Assemble a prompt with the instruction OUTSIDE the untrusted block.
 
-    Order is deliberate: task first, data second, standing instruction last. The
-    final position is the one a model weights most heavily, and it is the one
-    reasserting that everything above was data.
+    Order is deliberate: task, data, standing instruction, then an optional
+    restatement of the required output shape.
+
+    The standing instruction stays immediately after the untrusted block so the
+    block is always bracketed by trusted framing. `reminder` sits after it and is
+    trusted too — a long evidence dump pushes the output schema far enough
+    up-page that models drift out of it, and restating the contract last is what
+    holds them to it.
     """
-    return (
-        f"{instruction}\n\n"
-        f"{wrapped.text}\n\n"
-        f"{STANDING_INSTRUCTION}"
-    )
+    parts = [instruction, wrapped.text, STANDING_INSTRUCTION]
+    if reminder:
+        parts.append(reminder)
+    return "\n\n".join(parts)

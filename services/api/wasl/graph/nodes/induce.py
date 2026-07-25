@@ -24,6 +24,7 @@ from pydantic import ValidationError
 from wasl.graph.state import Capability, WaslState
 from wasl.llm.prompts.registry import load as load_prompt
 from wasl.llm.router import ModelRouter, Role
+from wasl.llm.schemas import INDUCE_SCHEMA
 from wasl.llm.untrusted import build_prompt, wrap_evidence_batch
 from wasl.obs.tracing import node_span, reasoning_span
 
@@ -45,8 +46,54 @@ CAPABILITY_KINDS = (
     "text",
 )
 
+# Selector markers meaning "we looked and found nothing". These are scoring
+# inputs, not capability signals — nothing can be induced from an absence. Worse,
+# feeding a model twenty "not found" rows makes it mirror the input shape and
+# return an audit summary instead of capabilities, which is exactly what happened
+# on the first real golden sites.
+ABSENCE_MARKERS = (
+    "#absent", "#no-spec", "#none", "#unavailable", "#clean", "#not-a-manifest",
+    "#not-markdown", "#not-a-spec", "#unreachable", "#insufficient-content",
+    "#unparseable", "#silent-on-automation",
+)
+
 MAX_EVIDENCE_ROWS = 60
+
+# Bound the prompt by SIZE, not just row count. Rows cap at 4,000 characters
+# each, so 60 of them is up to 240k characters — roughly 60k tokens into a model
+# with a 32k window. The window silently overflows and the model returns nothing.
+#
+# That is not hypothetical: capability recall was 0.00 across the first three
+# golden sites, with zero rejections, because induce never proposed anything to
+# reject. The fixtures never caught it — they yield ~35 short rows of clean
+# synthetic markup, where real sites yield 150-250 long ones.
+MAX_EVIDENCE_CHARS = 40_000
+MAX_ROW_CHARS = 900
+
 MAX_CAPABILITIES = 12
+
+
+def _budgeted(evidence: list) -> list:
+    """Take evidence rows until the character budget is spent.
+
+    Rows arrive longest-first, so this keeps the highest-signal ones. Each is
+    truncated to MAX_ROW_CHARS: a JSON-LD Product blob's first 900 characters
+    carry its @type and key properties, which is what a capability claim rests
+    on. The rest is padding as far as induction is concerned.
+    """
+    from wasl.crawler.evidence import Evidence
+
+    selected: list[Evidence] = []
+    spent = 0
+
+    for item in evidence:
+        if len(selected) >= MAX_EVIDENCE_ROWS or spent >= MAX_EVIDENCE_CHARS:
+            break
+        raw = item.raw[:MAX_ROW_CHARS]
+        spent += len(raw)
+        selected.append(item if len(item.raw) <= MAX_ROW_CHARS else item.model_copy(update={"raw": raw}))
+
+    return selected
 
 
 async def induce(state: WaslState, store=None, router: ModelRouter | None = None) -> dict:
@@ -57,7 +104,11 @@ async def induce(state: WaslState, store=None, router: ModelRouter | None = None
         if store is None:
             return {"errors": ["induce: no evidence store supplied"]}
 
-        relevant = [e for e in store.by_kind(*CAPABILITY_KINDS)]
+        relevant = [
+            e
+            for e in store.by_kind(*CAPABILITY_KINDS)
+            if not any(marker in (e.selector or "") for marker in ABSENCE_MARKERS)
+        ]
         # Longest rows first: a full JSON-LD Product carries more capability
         # signal than a one-line link, and the context budget is finite.
         relevant.sort(key=lambda e: len(e.raw), reverse=True)
@@ -66,8 +117,12 @@ async def induce(state: WaslState, store=None, router: ModelRouter | None = None
             logger.info("induce: no capability-bearing evidence; proposing nothing")
             return {"candidate_capabilities": []}
 
-        wrapped = wrap_evidence_batch(relevant, max_items=MAX_EVIDENCE_ROWS)
-        shown_ids = {e.id for e in relevant[:MAX_EVIDENCE_ROWS]}
+        budgeted = _budgeted(relevant)
+        wrapped = wrap_evidence_batch(budgeted)
+        shown_ids = {e.id for e in budgeted}
+
+        span.set_attribute("wasl.induce.evidence_rows", len(budgeted))
+        span.set_attribute("wasl.induce.prompt_chars", len(wrapped.text))
 
         if wrapped.forged_delimiters:
             logger.warning(
@@ -78,7 +133,21 @@ async def induce(state: WaslState, store=None, router: ModelRouter | None = None
 
         prompt_file = load_prompt("induce")
         instruction = prompt_file.render(domain=state.domain or state.root_url, evidence="")
-        prompt = build_prompt(instruction, wrapped)
+        # The schema is ~2,000 characters up-page by the time the model reaches
+        # the end of the evidence, and it drifts. Restating it last — after the
+        # standing instruction, so the untrusted block stays bracketed by it — is
+        # what holds the response to the required shape.
+        prompt = build_prompt(
+            instruction,
+            wrapped,
+            reminder=(
+                "Now return ONLY the JSON object specified above, of the form "
+                '{"capabilities": [...]}. Each capability MUST cite evidence_ids '
+                "drawn from the evidence above. If the evidence supports no "
+                'capability, return {"capabilities": []} — that is a valid answer. '
+                "Do not return a summary, an audit, or any other shape."
+            ),
+        )
 
         try:
             payload, spec = await router.complete_json(
@@ -88,6 +157,7 @@ async def induce(state: WaslState, store=None, router: ModelRouter | None = None
                 prompt_name=prompt_file.id,
                 prompt_sha=prompt_file.sha,
                 max_tokens=3000,
+                    json_schema=INDUCE_SCHEMA,
             )
         except Exception as exc:
             logger.error("induce failed: %s", exc)

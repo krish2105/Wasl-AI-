@@ -40,6 +40,13 @@ HARD_PAGE_CAP = 40
 REQUEST_TIMEOUT_SECONDS = 20
 MAX_REDIRECT_DEPTH = 3
 
+# Bodies above this are recorded but not handed to the detectors. Detection is
+# roughly linear in document size with a large constant — the injection scanner
+# alone takes ~13s on a 50 MB document, and fifteen detectors then compound it.
+# A page that large is never article content; it is a feed, a dump or a sitemap,
+# and parsing it costs minutes for no evidence.
+MAX_PARSEABLE_BYTES = 3_000_000
+
 ALLOWED_SCHEMES = frozenset({"https"})
 
 # Refused regardless of what robots.txt permits. These are the paths where a

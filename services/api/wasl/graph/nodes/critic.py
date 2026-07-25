@@ -29,6 +29,7 @@ import logging
 from wasl.graph.state import Capability, Rejection, WaslState
 from wasl.llm.prompts.registry import load as load_prompt
 from wasl.llm.router import ModelRouter, Role
+from wasl.llm.schemas import CRITIC_SCHEMA
 from wasl.llm.untrusted import build_prompt, wrap_evidence_batch
 from wasl.obs.tracing import node_span, reasoning_span
 
@@ -154,6 +155,7 @@ async def critique(
                     prompt_name=prompt_file.id,
                     prompt_sha=prompt_file.sha,
                     max_tokens=600,
+                    json_schema=CRITIC_SCHEMA,
                 )
             except Exception as exc:
                 # A critic that fails open would defeat its own purpose, so an
