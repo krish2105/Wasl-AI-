@@ -26,6 +26,7 @@ from wasl import __version__
 from wasl.config import get_settings
 from wasl.db.session import dispose_engine, session_scope
 from wasl.graph import runner
+from wasl.graph.checkpoint import open_checkpointer
 from wasl.obs.tracing import configure_tracing
 from wasl.queue import JobQueue
 
@@ -47,11 +48,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.queue = queue
     logger.info("wasl-api %s starting in %s", __version__, settings.env)
 
-    try:
-        yield
-    finally:
-        await queue.close()
-        await dispose_engine()
+    # Opened for the process lifetime rather than per scan: setup() is a DDL
+    # round trip and a pool per job would be worse than no pool. Yields None if
+    # Postgres is unreachable, in which case scans still run, just unresumably.
+    async with open_checkpointer(settings.database_url) as checkpointer:
+        app.state.checkpointer = checkpointer
+        try:
+            yield
+        finally:
+            await queue.close()
+            await dispose_engine()
 
 
 app = FastAPI(

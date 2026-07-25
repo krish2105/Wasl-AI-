@@ -33,6 +33,7 @@ from wasl.crawler.cache import SnapshotCache
 from wasl.generators.packager import generate_all
 from wasl.graph import events as ev
 from wasl.graph.build import build_graph, gate_pregenerate, store_from_records
+from wasl.graph.checkpoint import active_checkpointer
 from wasl.graph.nodes import demo as demo_node
 from wasl.graph.state import WaslState
 from wasl.llm.router import ModelRouter
@@ -129,7 +130,9 @@ async def run_job(job: Job) -> None:
         # a checkpointed resume possible. Progress events reach the client from
         # inside the nodes, through the run config, so a 12-page crawl at
         # 0.5 req/s still ticks rather than going silent for 24 seconds.
-        graph = build_graph(router, checkpointer=None)
+        # None when Postgres is unreachable: the scan runs, it just cannot be
+        # resumed. Never a reason to refuse to start.
+        graph = build_graph(router, checkpointer=active_checkpointer())
         config = {"configurable": {"thread_id": job.job_id, "emit": job.emit}}
         raw_state = await graph.ainvoke(
             WaslState(
