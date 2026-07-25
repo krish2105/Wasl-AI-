@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
+import { BackendNotice } from "@/components/ui/BackendNotice";
 import { startScan } from "@/lib/scan";
 
 /**
@@ -65,7 +66,9 @@ function StartScan(): React.ReactElement {
         </div>
       )}
 
-      <p className="lede">
+      <BackendNotice />
+
+      <p className="lede mt-10">
         Live scanning is disabled until the crawler can identify itself honestly — a
         User-Agent advertising a page nobody can read is not acceptable identification, so
         the crawler refuses to start without one.

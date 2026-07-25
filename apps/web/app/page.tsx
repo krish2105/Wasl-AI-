@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { MachineView } from "@/components/MachineView";
+import { BackendNotice } from "@/components/ui/BackendNotice";
 import { ArrowRightIcon, EvidenceIcon, ShieldIcon, SplitIcon } from "@/components/ui/Icons";
 
 /**
@@ -89,6 +90,8 @@ export default function Home(): React.ReactElement {
             what the crawler does
           </Link>
         </p>
+
+        <BackendNotice />
       </section>
 
       {/* --- the rubric ---------------------------------------------------- */}
