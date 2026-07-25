@@ -176,6 +176,14 @@ variance introduced by a live crawl discovering different pages on different day
 It validates that the scanner searches the right hiding places — hidden elements, comments,
 attributes, encoding — not that it generalises to payloads nobody anticipated.
 
+**The split-screen demo's MCP arm currently fails on the offline model tier.** Asked to read a
+product out of tool results, `qwen2.5:7b` returns a fluent, plausible, entirely invented answer.
+The demo detects this — every claimed value is checked against the material the arm was shown, and
+an untraceable answer is counted as a failure — so the panel reports the fabrication rather than
+rendering it as a win. The failure is the local model's, not the pipeline's, and a Groq or Gemini
+key is expected to clear it. Until then the demo honestly shows the raw page winning on
+server-rendered fixtures.
+
 **"Required property" is Wasl's definition, not schema.org's.** schema.org defines no required
 properties; taken literally, Axis 2's validity check is unfalsifiable. The operational definition
 lives in `services/api/wasl/scoring/schema_required.yaml` with its reasoning.

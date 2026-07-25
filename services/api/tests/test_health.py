@@ -52,17 +52,35 @@ async def test_health_reports_503_when_the_database_is_unreachable(
     assert "simulated outage" in body["checks"]["database"]["detail"]
 
 
-async def test_unimplemented_routes_answer_501_not_fabricated_data(
+async def test_still_unimplemented_routes_answer_501_not_fabricated_data(
     client: AsyncClient,
 ) -> None:
-    """A stub that returns plausible output survives into a demo. These do not."""
-    for method, path in [
-        ("POST", "/api/scan"),
-        ("GET", "/api/scan/abc/events"),
-        ("GET", "/api/scan/abc"),
-        ("GET", "/api/scan/abc/artifacts.zip"),
-        ("GET", "/api/leaderboard"),
+    """A stub returning plausible output survives into a demo. This one does not."""
+    response = await client.get("/api/leaderboard")
+    assert response.status_code == 501
+    assert "Phase" in response.json()["detail"]
+
+
+async def test_unknown_jobs_are_404_not_empty_results(client: AsyncClient) -> None:
+    """An empty report for a job that never existed reads as 'nothing found'."""
+    for path in [
+        "/api/scan/does-not-exist",
+        "/api/scan/does-not-exist/events",
+        "/api/scan/does-not-exist/artifacts.zip",
     ]:
-        response = await client.request(method, path)
-        assert response.status_code == 501, f"{method} {path}"
-        assert "Phase" in response.json()["detail"]
+        response = await client.get(path)
+        assert response.status_code == 404, path
+
+
+async def test_a_scan_needs_a_url_or_a_fixture(client: AsyncClient) -> None:
+    response = await client.post("/api/scan", json={})
+    assert response.status_code == 422
+    assert "url or a fixture" in response.json()["detail"]
+
+
+async def test_plain_http_urls_are_rejected_before_a_job_is_created(
+    client: AsyncClient,
+) -> None:
+    """The https-only rule belongs at the edge, not halfway through a crawl."""
+    response = await client.post("/api/scan", json={"url": "http://example.com"})
+    assert response.status_code == 422

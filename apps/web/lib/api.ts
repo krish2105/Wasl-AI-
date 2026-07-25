@@ -48,7 +48,10 @@ export class ApiError extends Error {
  */
 export async function apiFetch<T>(
   path: string,
-  schema: z.ZodType<T>,
+  // Typed on the OUTPUT side: schemas here use `.default()`, so the parsed value
+  // has required fields the raw response does not. Inferring T from the input
+  // type makes every defaulted field optional downstream.
+  schema: z.ZodType<T, z.ZodTypeDef, unknown>,
   init?: RequestInit,
 ): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {

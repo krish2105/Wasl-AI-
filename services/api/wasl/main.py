@@ -13,16 +13,19 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, FastAPI, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from pydantic import BaseModel, field_validator
 from sqlalchemy import text
 
 from wasl import __version__
 from wasl.config import get_settings
 from wasl.db.session import dispose_engine, session_scope
+from wasl.graph import runner
 from wasl.obs.tracing import configure_tracing
 from wasl.queue import JobQueue
 
@@ -131,47 +134,143 @@ async def health() -> JSONResponse:
 
 api = APIRouter(prefix="/api", tags=["scan"])
 
-_PHASE_4 = "Implemented in Phase 4 (LangGraph agents)."
-_PHASE_5 = "Implemented in Phase 5 (generators and probe)."
 _PHASE_8 = "Implemented in Phase 8 (leaderboard)."
 
 
-def _not_implemented(detail: str) -> JSONResponse:
-    return JSONResponse(status_code=NOT_IMPLEMENTED, content={"detail": detail})
+class ScanRequest(BaseModel):
+    """Submit either a live URL or a saved fixture.
+
+    Fixture mode exists because the crawler refuses to run without a configured
+    identity, and the interface still needs to be exercisable end to end. Every
+    model call, validator and critic rule is the production one; only the network
+    is skipped, and the report says `source: fixture` so the distinction reaches
+    the screen rather than living in a footnote.
+    """
+
+    model_config = {"extra": "forbid"}
+
+    url: str | None = None
+    fixture: str | None = None
+
+    @field_validator("url")
+    @classmethod
+    def _https_only(cls, v: str | None) -> str | None:
+        if v and not v.startswith("https://"):
+            raise ValueError("Only https URLs are crawled.")
+        return v
 
 
-@api.post("/scan", status_code=NOT_IMPLEMENTED)
-async def submit_scan() -> JSONResponse:
-    """Queue a scan of a URL. Enforces the allowlist and the pre-crawl gate."""
-    return _not_implemented(_PHASE_4)
+@api.post("/scan", status_code=status.HTTP_202_ACCEPTED)
+async def submit_scan(request: ScanRequest) -> JSONResponse:
+    """Queue a scan. Policy and the crawler-identity check run inside the job."""
+    if not request.url and not request.fixture:
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={"detail": "Give either a url or a fixture name."},
+        )
+
+    job = await runner.start_job(
+        target=request.fixture or request.url or "",
+        source="fixture" if request.fixture else "live",
+    )
+    return JSONResponse(
+        status_code=status.HTTP_202_ACCEPTED,
+        content={"job_id": job.job_id, "source": job.source, "target": job.target},
+    )
 
 
-@api.get("/scan/{job_id}/events")
-async def scan_events(job_id: str) -> JSONResponse:
-    """Server-sent events: one per LangGraph node, plus evidence counters."""
-    return _not_implemented(_PHASE_4)
+# response_model=None: FastAPI cannot derive a schema from a union of Response
+# types, and there is nothing useful it could generate for an SSE stream anyway.
+@api.get("/scan/{job_id}/events", response_model=None)
+async def scan_events(job_id: str) -> StreamingResponse | JSONResponse:
+    """Server-sent events: one per node, plus counters between them.
+
+    Replays history first so a client that connects late — or reconnects — sees
+    the whole run rather than joining midway.
+    """
+    job = runner.get_job(job_id)
+    if job is None:
+        return JSONResponse(status_code=404, content={"detail": f"No job {job_id}."})
+
+    async def stream() -> AsyncIterator[str]:
+        replayed = 0
+        for event in list(job.history):
+            replayed += 1
+            yield event.to_sse()
+
+        if job.status in {"complete", "failed", "refused"}:
+            return
+
+        while True:
+            event = await job.queue.get()
+            if event is None:
+                break
+            # Skip anything already replayed from history.
+            if job.history.index(event) < replayed:
+                continue
+            yield event.to_sse()
+
+    return StreamingResponse(
+        stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @api.get("/scan/{job_id}")
 async def scan_report(job_id: str) -> JSONResponse:
-    """The full report: WARI score, six axes, evidence refs, critic rejections."""
-    return _not_implemented(_PHASE_4)
+    """The full report: score, six axes, evidence, rejections, demo."""
+    job = runner.get_job(job_id)
+    if job is None:
+        return JSONResponse(status_code=404, content={"detail": f"No job {job_id}."})
+
+    if job.status in {"queued", "running"}:
+        return JSONResponse(
+            status_code=status.HTTP_202_ACCEPTED,
+            content={"job_id": job_id, "status": job.status},
+        )
+
+    if job.report is None:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"job_id": job_id, "status": job.status, "detail": job.error},
+        )
+
+    return JSONResponse(content=job.report)
 
 
-@api.get("/scan/{job_id}/artifacts.zip")
-async def scan_artifacts(job_id: str) -> JSONResponse:
-    """Download the generated MCP server, Agent Card and llms.txt.
+@api.get("/scan/{job_id}/artifacts.zip", response_model=None)
+async def scan_artifacts(job_id: str) -> FileResponse | JSONResponse:
+    """Download the generated bundle.
 
-    Only served after the generated server has been imported in a clean
-    subprocess and its tools introspected.
+    Served only after the generated server imported in a clean subprocess and
+    exposed at least one tool. An unverified artifact has no download path.
     """
-    return _not_implemented(_PHASE_5)
+    job = runner.get_job(job_id)
+    if job is None or job.state is None or job.state.artifacts is None:
+        return JSONResponse(status_code=404, content={"detail": f"No artifacts for {job_id}."})
+
+    zip_path = job.state.artifacts.zip_path
+    if not zip_path or not Path(zip_path).exists():
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={
+                "detail": "Not offered for download: the generated server failed verification.",
+                "verification": job.state.artifacts.verification_output,
+            },
+        )
+
+    return FileResponse(zip_path, media_type="application/zip", filename=Path(zip_path).name)
 
 
 @api.get("/leaderboard")
 async def leaderboard() -> JSONResponse:
     """Seeded companies ranked by WARI. Government entities are anonymised."""
-    return _not_implemented(_PHASE_8)
+    return JSONResponse(status_code=NOT_IMPLEMENTED, content={"detail": _PHASE_8})
 
 
 app.include_router(api)

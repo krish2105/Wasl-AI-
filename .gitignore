@@ -32,3 +32,6 @@ services/api/eval/failures/
 
 # Generated during eval runs
 data/artifacts/eval/
+
+# Next.js local overrides
+apps/web/.env.local
