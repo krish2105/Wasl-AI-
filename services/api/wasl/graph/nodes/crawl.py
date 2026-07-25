@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 
+from wasl.config import ConfigurationError
 from wasl.crawler.fetch import Crawler, CrawlRefused
 from wasl.crawler.policy import Budget as CrawlBudget
 from wasl.crawler.types import CaptureMode
@@ -40,18 +41,38 @@ async def crawl(state: WaslState) -> dict:
     already durable in the snapshot cache.
     """
     with node_span("crawl", job_id=state.job_id, domain=state.domain or state.root_url):
-        budget = CrawlBudget(state.budget_name)
-        try:
-            async with Crawler(budget=budget) as crawler:
-                pages, artifacts = await crawler.crawl(
-                    state.root_url, user_submitted=state.user_submitted
-                )
-        except CrawlRefused as exc:
-            logger.warning("crawl refused: %s", exc)
-            return {
-                "errors": [f"crawl refused [{exc.rule}]: {exc.reason}"],
-                "awaiting_confirmation": exc.rule if exc.rule == "not_allowlisted" else None,
-            }
+        if state.source == "fixture":
+            # Replays a saved page from disk. This branch exists here rather than
+            # in the caller because the graph is the execution path: a scan
+            # resumed from a checkpoint has to reach the same decision the
+            # original run did, and a caller-side branch would not survive the
+            # round trip through Postgres.
+            from wasl.scoring.cli import load_fixture, neutral_artifacts
+
+            page = load_fixture(state.root_url)
+            pages = [page]
+            artifacts = neutral_artifacts(page.final_url)
+        else:
+            budget = CrawlBudget(state.budget_name)
+            try:
+                async with Crawler(budget=budget) as crawler:
+                    pages, artifacts = await crawler.crawl(
+                        state.root_url, user_submitted=state.user_submitted
+                    )
+            except CrawlRefused as exc:
+                logger.warning("crawl refused: %s", exc)
+                return {
+                    "errors": [f"crawl refused [{exc.rule}]: {exc.reason}"],
+                    "awaiting_confirmation": (
+                        exc.rule if exc.rule == "not_allowlisted" else None
+                    ),
+                }
+            except ConfigurationError as exc:
+                # "the crawler is not configured to identify itself" is a
+                # legitimate, expected state, not a crash. It must reach the UI
+                # as a refusal with its reason intact.
+                logger.warning("crawl unconfigured: %s", exc)
+                return {"errors": [f"crawl refused [unconfigured]: {exc}"]}
 
         summaries = [summarise(page) for page in pages]
         logger.info(

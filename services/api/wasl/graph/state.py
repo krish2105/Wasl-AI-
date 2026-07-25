@@ -257,6 +257,12 @@ class WaslState(BaseModel):
     budget_name: str = "interactive"
     user_submitted: bool = False
 
+    # "fixture" replays a saved page from disk and sends no request. It lives in
+    # state rather than being decided by the caller because the graph is the
+    # execution path, and a resumed scan has to know it must not reach for the
+    # network on a leg the original run served from disk.
+    source: Literal["url", "fixture"] = "url"
+
     pages: list[PageSummary] = Field(default_factory=list)
     evidence: list[EvidenceRecord] = Field(default_factory=list)
 

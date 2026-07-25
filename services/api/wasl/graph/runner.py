@@ -28,20 +28,12 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Literal
 
-from wasl.config import ConfigurationError, get_settings
-from wasl.crawler.detectors import extract_all
-from wasl.crawler.fetch import Crawler, CrawlRefused
-from wasl.crawler.policy import Budget as CrawlBudget
+from wasl.config import get_settings
+from wasl.crawler.cache import SnapshotCache
 from wasl.generators.packager import generate_all
 from wasl.graph import events as ev
-from wasl.graph.build import store_from_records
-from wasl.graph.nodes import critic as critic_node
+from wasl.graph.build import build_graph, gate_pregenerate, store_from_records
 from wasl.graph.nodes import demo as demo_node
-from wasl.graph.nodes import extract as extract_node
-from wasl.graph.nodes import induce as induce_node
-from wasl.graph.nodes import score as score_node
-from wasl.graph.nodes import synthesize as synthesize_node
-from wasl.graph.nodes.crawl import summarise
 from wasl.graph.state import WaslState
 from wasl.llm.router import ModelRouter
 
@@ -59,6 +51,9 @@ class Job:
     target: str
     source: Source
     status: Status = "queued"
+    # Set when the submitter has confirmed they understand the generated
+    # artifacts are illustrative and unsigned. Drives gate_pregenerate.
+    acknowledged: bool = False
     queue: asyncio.Queue[ev.ScanEvent | None] = field(default_factory=asyncio.Queue)
     history: list[ev.ScanEvent] = field(default_factory=list)
     state: WaslState | None = None
@@ -86,27 +81,26 @@ def all_jobs() -> list[Job]:
     return list(_JOBS.values())
 
 
-async def _load_pages(job: Job) -> tuple[list, Any, str | None]:
-    """Get pages either from a fixture or from a real crawl.
+def _raw_sample(state: WaslState) -> str:
+    """The raw pre-JS body the demo's first arm reads.
 
-    Returns (pages, artifacts, refusal reason). A refusal is not an exception —
-    "this crawler is not configured to identify itself" is a legitimate and
-    expected state that the UI needs to render clearly.
+    Re-read rather than carried through state. The graph deliberately keeps
+    captured pages out of `WaslState` so a checkpoint stays small, and the demo
+    is the only consumer left that needs the bytes. A fixture reloads from disk;
+    a live scan reads the snapshot the crawl already wrote, so neither path sends
+    a second request.
     """
-    if job.source == "fixture":
-        from wasl.scoring.cli import load_fixture, neutral_artifacts
+    if state.source == "fixture":
+        from wasl.scoring.cli import load_fixture
 
-        page = load_fixture(job.target)
-        return [page], neutral_artifacts(page.final_url), None
+        try:
+            return load_fixture(state.root_url).pre_js_html
+        except Exception:  # pragma: no cover - the demo degrades, it does not fail
+            logger.debug("fixture reload for demo failed", exc_info=True)
+            return ""
 
-    try:
-        async with Crawler(budget=CrawlBudget.INTERACTIVE) as crawler:
-            pages, artifacts = await crawler.crawl(job.target, user_submitted=True)
-        return pages, artifacts, None
-    except ConfigurationError as exc:
-        return [], None, str(exc)
-    except CrawlRefused as exc:
-        return [], None, f"[{exc.rule}] {exc.reason}"
+    page = SnapshotCache().latest(state.root_url)
+    return page.pre_js_html if page else ""
 
 
 async def run_job(job: Job) -> None:
@@ -129,141 +123,56 @@ async def run_job(job: Job) -> None:
             )
         )
 
-        # --- crawl -----------------------------------------------------------
-        await job.emit(ev.node_start(job.job_id, "crawl"))
-        pages, artifacts, refusal = await _load_pages(job)
+        # --- the graph -------------------------------------------------------
+        # gate_precrawl through score runs as the compiled LangGraph. That is
+        # what makes the pre-crawl gate real rather than declared, and what makes
+        # a checkpointed resume possible. Progress events reach the client from
+        # inside the nodes, through the run config, so a 12-page crawl at
+        # 0.5 req/s still ticks rather than going silent for 24 seconds.
+        graph = build_graph(router, checkpointer=None)
+        config = {"configurable": {"thread_id": job.job_id, "emit": job.emit}}
+        raw_state = await graph.ainvoke(
+            WaslState(
+                job_id=job.job_id,
+                root_url=job.target,
+                source=job.source,
+                user_submitted=job.source != "fixture",
+            ),
+            config,
+        )
+        state = raw_state if isinstance(raw_state, WaslState) else WaslState(**raw_state)
 
-        if refusal is not None:
+        if state.awaiting_confirmation or (state.errors and not state.pages):
+            reason = state.awaiting_confirmation or state.errors[0]
             job.status = "refused"
-            job.error = refusal
-            await job.emit(ev.error(job.job_id, refusal, node="crawl"))
+            job.error = reason
+            job.state = state
             await job.emit(ev.done(job.job_id, status="refused"))
             return
 
-        for page in pages:
-            await job.emit(
-                ev.progress(
-                    job.job_id,
-                    "crawl",
-                    page.final_url,
-                    status=page.status_code,
-                    robots_blocked=page.robots_blocked,
-                    pre_js_chars=len(page.pre_js_html),
-                    post_js_chars=len(page.post_js_html),
-                )
-            )
-        await job.emit(ev.node_complete(job.job_id, "crawl", pages=len(pages)))
-
-        state = WaslState(
-            job_id=job.job_id,
-            root_url=pages[0].final_url if pages else job.target,
-            domain=artifacts.domain,
-            pages=[summarise(p) for p in pages],
-            user_submitted=True,
-        )
-
-        # --- extract ---------------------------------------------------------
-        await job.emit(ev.node_start(job.job_id, "extract"))
-        store = extract_all(pages, artifacts)
-        state = state.model_copy(update={"evidence": extract_node.to_records(store)})
-
-        for kind, count in store.kind_counts().items():
-            await job.emit(ev.progress(job.job_id, "extract", kind, count=count))
-        await job.emit(
-            ev.node_complete(
-                job.job_id, "extract", evidence=len(store), kinds=len(store.kind_counts())
-            )
-        )
-
         rebuilt = store_from_records(state.evidence)
 
-        # --- induce ----------------------------------------------------------
-        await job.emit(ev.node_start(job.job_id, "induce"))
-        induced = await induce_node.induce(state, store=rebuilt, router=router)
-        state = state.model_copy(
-            update={"candidate_capabilities": induced.get("candidate_capabilities", [])}
-        )
-        for capability in state.candidate_capabilities:
-            await job.emit(
-                ev.ScanEvent(
-                    type=ev.EventType.CAPABILITY,
-                    job_id=job.job_id,
-                    node="induce",
-                    message=capability.name,
-                    data={
-                        "name": capability.name,
-                        "verb": capability.verb,
-                        "noun": capability.noun,
-                        "evidence_ids": capability.evidence_ids,
-                    },
-                )
-            )
-        await job.emit(
-            ev.node_complete(job.job_id, "induce", candidates=len(state.candidate_capabilities))
-        )
-
-        # --- synthesize ------------------------------------------------------
-        await job.emit(ev.node_start(job.job_id, "synthesize"))
-        synthesized = await synthesize_node.synthesize(state, store=rebuilt, router=router)
-        state = state.model_copy(
-            update={"candidate_capabilities": synthesized.get("candidate_capabilities", [])}
-        )
-        await job.emit(
-            ev.node_complete(
-                job.job_id,
-                "synthesize",
-                schemas=sum(1 for c in state.candidate_capabilities if c.tool_schema),
-            )
-        )
-
-        # --- critic ----------------------------------------------------------
-        await job.emit(ev.node_start(job.job_id, "critic"))
-        critiqued = await critic_node.critique(state, store=rebuilt, router=router)
-        state = state.model_copy(
-            update={
-                "accepted_capabilities": critiqued.get("accepted_capabilities", []),
-                "rejections": critiqued.get("rejections", []),
-            }
-        )
-        for rejection in state.rejections:
-            await job.emit(
-                ev.ScanEvent(
-                    type=ev.EventType.REJECTION,
-                    job_id=job.job_id,
-                    node="critic",
-                    message=rejection.capability_name,
-                    data={"rule_id": rejection.rule_id, "reason": rejection.reason},
-                )
-            )
-        await job.emit(
-            ev.node_complete(
-                job.job_id,
-                "critic",
-                accepted=len(state.accepted_capabilities),
-                refused=len(state.rejections),
-            )
-        )
-
-        # --- score -----------------------------------------------------------
-        await job.emit(ev.node_start(job.job_id, "score"))
-        scored = await score_node.score(state, store=rebuilt)
-        state = state.model_copy(update={"score": scored.get("score")})
-        await job.emit(
-            ev.ScanEvent(
-                type=ev.EventType.SCORE,
-                job_id=job.job_id,
-                node="score",
-                data=state.score or {},
-            )
-        )
-        await job.emit(ev.node_complete(job.job_id, "score"))
+        # --- gate_pregenerate ------------------------------------------------
+        # Blocking, per CLAUDE.md §6. Scanning somebody else's site is fine;
+        # writing an MCP server that purports to describe their business is the
+        # thing that needs a human behind it, so the pause sits here and not
+        # earlier. A fixture is our own saved page and passes straight through.
+        confirmation = gate_pregenerate(state, owns_domain=job.acknowledged)
+        if confirmation is not None:
+            job.status = "awaiting_confirmation"
+            job.error = confirmation
+            job.state = state
+            job.seconds = time.perf_counter() - started
+            await job.emit(ev.error(job.job_id, confirmation, node="generate"))
+            await job.emit(ev.done(job.job_id, status="awaiting_confirmation"))
+            return
 
         # --- generate --------------------------------------------------------
         await job.emit(ev.node_start(job.job_id, "generate"))
         outcome = await generate_all(
             job_id=job.job_id,
-            domain=artifacts.domain,
-            site_name=artifacts.domain,
+            domain=state.domain,
+            site_name=state.domain,
             capabilities=[*state.accepted_capabilities, *state.candidate_capabilities],
             pages=state.pages,
             store=rebuilt,
@@ -291,7 +200,7 @@ async def run_job(job: Job) -> None:
         demo = await demo_node.run_demo(
             state,
             store=rebuilt,
-            raw_html=pages[0].pre_js_html if pages else "",
+            raw_html=_raw_sample(state),
             router=router,
         )
         state = state.model_copy(update={"demo_result": demo.get("demo_result")})
@@ -375,13 +284,18 @@ def build_report(job: Job, *, store, verification) -> dict[str, Any]:
     }
 
 
-def create_job(*, target: str, source: Source) -> Job:
-    job = Job(job_id=uuid.uuid4().hex[:12], target=target, source=source)
+def create_job(*, target: str, source: Source, acknowledged: bool = False) -> Job:
+    job = Job(
+        job_id=uuid.uuid4().hex[:12],
+        target=target,
+        source=source,
+        acknowledged=acknowledged,
+    )
     _JOBS[job.job_id] = job
     return job
 
 
-async def start_job(target: str, source: Source) -> Job:
-    job = create_job(target=target, source=source)
+async def start_job(target: str, source: Source, acknowledged: bool = False) -> Job:
+    job = create_job(target=target, source=source, acknowledged=acknowledged)
     asyncio.create_task(run_job(job))
     return job

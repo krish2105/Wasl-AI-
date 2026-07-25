@@ -38,6 +38,7 @@ class EventType(StrEnum):
 
 # Display order and labels for the six pipeline stages the UI renders.
 NODE_SEQUENCE: tuple[tuple[str, str], ...] = (
+    ("gate_precrawl", "Checking crawl permission"),
     ("crawl", "Fetching pages"),
     ("extract", "Extracting evidence"),
     ("induce", "Inducing capabilities"),

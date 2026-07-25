@@ -153,6 +153,10 @@ class ScanRequest(BaseModel):
 
     url: str | None = None
     fixture: str | None = None
+    # Confirms the submitter understands the generated artifacts are
+    # illustrative and unsigned. Without it, gate_pregenerate pauses the job
+    # before anything is written for a domain they have not claimed.
+    acknowledge_generation: bool = False
 
     @field_validator("url")
     @classmethod
@@ -173,6 +177,7 @@ async def submit_scan(request: ScanRequest) -> JSONResponse:
 
     job = await runner.start_job(
         target=request.fixture or request.url or "",
+        acknowledged=request.acknowledge_generation,
         source="fixture" if request.fixture else "live",
     )
     return JSONResponse(
